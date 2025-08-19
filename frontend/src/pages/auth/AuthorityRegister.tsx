@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 import logoImg from "../../assets/images/logo.png";
 import CustomerSVG from '../../assets/images/customerHero';
 
-const CitizenRegister: React.FC = () => {
+const AuthorityRegister: React.FC = () => {
     const {
         register,
         handleSubmit,
@@ -68,14 +68,14 @@ const CitizenRegister: React.FC = () => {
                     <Col className="mx-auto" xl="8">
                         <small className="mb-1 text-uppercase text-gray-600">Let's Get Started</small>
                         <CardTitle tag="h2" className="font-weight-bold mb-1">
-                            Register here For Citizen
+                            Register here For Authority
                         </CardTitle>
                         <div className="row mb-3">
                             <div className="col-12">
                                 <p className="body-meta">
                                     Looking for care?{' '}
-                                    <Link to="/register-authority" className="primary-link">
-                                        <span className="fw-bold">Sign up as a Authority →</span>
+                                    <Link to="/register-citizen" className="primary-link">
+                                        <span className="fw-bold">Sign up as a Citizen →</span>
                                     </Link>
                                 </p>
                             </div>
@@ -173,4 +173,4 @@ const CitizenRegister: React.FC = () => {
     );
 };
 
-export default CitizenRegister;
+export default AuthorityRegister;

@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import { ToastContainer } from 'react-toastify';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import CitizenRegister from './pages/auth/CitizenRegister';
+import AuthorityRegister from './pages/auth/AuthorityRegister';
 
 const App: React.FC = () => {
   const getHomeRoute = () => {
@@ -25,6 +27,8 @@ const App: React.FC = () => {
           <Route index element={getHomeRoute()} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
+          <Route path="register-citizen" element={<CitizenRegister />} />
+          <Route path="register-authority" element={<AuthorityRegister />} />
         </Route>
       </Routes>
     </Suspense>

@@ -6,6 +6,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #fafafa;
+  color: #181e4b;
 }
 
 code {
@@ -32,15 +33,18 @@ header {
 
   .hero-content {
     max-width: 50%;
+
     h1 {
       font-size: 3rem;
       color: #333;
     }
+
     p {
       margin-top: 1rem;
       color: #555;
       font-size: 1.2rem;
     }
+
     .btn-primary {
       margin-top: 2rem;
       padding: 0.5rem 1.2rem;
@@ -52,6 +56,7 @@ header {
       font-size: 1rem;
     }
   }
+
   .hero-image img {
     max-width: 500px;
     border-radius: 10px;
@@ -78,9 +83,12 @@ header {
 }
 
 .feature-item img {
-  height: 200px; /* Set a uniform height */
-  width: auto; /* Maintain aspect ratio */
-  object-fit: contain; /* Ensure the image fits within the height */
+  height: 200px;
+  /* Set a uniform height */
+  width: auto;
+  /* Maintain aspect ratio */
+  object-fit: contain;
+  /* Ensure the image fits within the height */
   margin-bottom: 10px;
   border-radius: 10px;
 }
@@ -111,6 +119,7 @@ header {
   background-color: #0073e6;
   color: white;
   padding: 2rem;
+
   .btn-primary {
     margin-top: 1rem;
     padding: 0.75rem 1.5rem;
@@ -135,6 +144,10 @@ header {
 .main-board {
   margin-top: 100px;
   margin-bottom: 100px;
+}
+
+.main-view {
+  margin-top: 70px;
 }
 
 @media (max-width: 767px) {
@@ -194,12 +207,17 @@ header {
 }
 
 .nav-link {
-  padding: 0 15px; /* Horizontal padding of 15px */
-  color: white; /* Ensure the text color is white */
-  text-decoration: none; /* Remove underline */
+  padding: 0 15px;
+  /* Horizontal padding of 15px */
+  color: white;
+  /* Ensure the text color is white */
+  text-decoration: none;
+
+  /* Remove underline */
   &:hover {
-      text-decoration: none;
-      color: #f8f9fa; /* Slightly lighter white on hover */
+    text-decoration: none;
+    color: #f8f9fa;
+    /* Slightly lighter white on hover */
   }
 }
 
@@ -238,19 +256,19 @@ a {
 
 @media (min-width: 576px) {
   .card-deck {
-      display: flex;
-      flex-flow: row wrap;
-      margin-right: -1rem;
-      margin-left: -1rem;
+    display: flex;
+    flex-flow: row wrap;
+    margin-right: -1rem;
+    margin-left: -1rem;
   }
 }
 
 @media (min-width: 576px) {
   .card-deck .card {
-      margin-right: 1rem;
-      margin-left: 1rem;
-      margin-bottom: 0;
-      flex: 1 0 0%;
+    margin-right: 1rem;
+    margin-left: 1rem;
+    margin-bottom: 0;
+    flex: 1 0 0%;
   }
 }
 
@@ -352,4 +370,62 @@ a {
 
 .auth-wrapper .auth-login {
   width: 100%;
+}
+
+.flexbox-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+}
+
+.brand-logo {
+  margin: 1rem 0 2rem;
+}
+
+.auth-registration {
+  align-items: flex-start;
+  height: 100vh;
+}
+
+.auth-registration .brand-logo {
+  margin: 1rem 0 2rem;
+  display: flex;
+  justify-content: center;
+  max-width: 480px;
+}
+
+.auth-registration .brand-logo img {
+  max-width: 100px;
+}
+
+.auth-registration .brand-logo .brand-text {
+  color: #9ba4ae;
+}
+
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #282c34!important;
+}
+
+.form-control {
+  padding: .6rem .75rem!important;
+}
+
+.auth-registration .hero-image {
+  margin-left: -2rem;
+}
+
+.auth-registration .hero-image svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+}
+
+.auth-login .hero-image svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
 }

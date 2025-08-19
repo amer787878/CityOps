@@ -53,7 +53,7 @@ const Header: React.FC = () => {
                 });
             }
         }
-    }, [isSuccess, isError, error]);
+    }, [isLoading]);
 
     const onLogoutHandler = () => {
         logoutUser();

@@ -17,11 +17,10 @@ export interface IUser {
 }
 
 export interface RegisterUserRequest {
-    username: string;
-    firstname: string;
-    lastname: string;
+    fullname: string;
     email: string;
     password: string;
+    passwordConfirm: string;
 }
 
 export interface LoginUserRequest {

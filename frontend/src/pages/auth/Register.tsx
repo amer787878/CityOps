@@ -44,7 +44,7 @@ const Register = () => {
         <p className="text-center mt-4">
           Already have an account?{' '}
           <Link to="/login">
-            <span className="register-link">Sign in instead</span>
+            <span className="register-link">Log in instead</span>
           </Link>
         </p>
       </div>

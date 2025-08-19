@@ -9,14 +9,14 @@ import {
 } from "reactstrap";
 import { LoginUserRequest } from "../../redux/api/types";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import classnames from "classnames";
 import { useLoginUserMutation } from "../../redux/api/authAPI";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { getHomeRouteForLoggedInUser, getUserData } from "../../utils/Utils";
 import logoImg from "../../assets/images/logo.png";
-import citizenLoginImg from "../../assets/images/citizen-login.png";
+import CustomerSVG from "../../assets/images/customerHero";
 
 const Login: React.FC = () => {
     const {
@@ -26,12 +26,10 @@ const Login: React.FC = () => {
     } = useForm<LoginUserRequest>();
 
     const navigate = useNavigate();
-    const location = useLocation();
     const [isProcessing, setProcessing] = useState(false);
 
     const [loginUser, { isLoading, isError, error, isSuccess }] =
         useLoginUserMutation();
-    const from = ((location.state as any)?.from?.pathname as string) || "/";
 
     useEffect(() => {
         if (isSuccess) {
@@ -55,7 +53,7 @@ const Login: React.FC = () => {
                 });
             }
         }
-    }, [isSuccess, isError]);
+    }, [isLoading]);
 
     const onSubmit: SubmitHandler<LoginUserRequest> = (data) => {
         setProcessing(true);
@@ -67,10 +65,12 @@ const Login: React.FC = () => {
             <div className="auth-login row m-0">
                 <div className="d-none d-lg-flex col-lg-8 align-items-center p-5">
                     <div className="w-100 d-lg-flex align-items-center justify-content-center px-5">
-                        <img className="img-fluid" src={citizenLoginImg} alt="Login" />
+                        <div className="hero-image mt-2">
+                            <CustomerSVG />
+                        </div>
                     </div>
                 </div>
-                <div className="d-flex col-lg-4 align-items-center auth-bg px-2 p-lg-5">
+                <div className="d-flex col-lg-4 align-items-center auth-bg px-2 bg-white p-lg-5">
                     <div className="col-12 col-sm-8 col-md-6 col-lg-12 px-xl-2 mx-auto">
                         <div className="mb-4 d-flex justify-content-center">
                             <img className="auth-img" src={logoImg} alt="Materials" />
@@ -81,6 +81,7 @@ const Login: React.FC = () => {
                                 <h4 className="text-center">Login your account</h4>
                             </div>
                         </div>
+
 
                         <Form onSubmit={handleSubmit(onSubmit)}>
                             <FormGroup>
@@ -104,7 +105,7 @@ const Login: React.FC = () => {
                                 {errors.password && <small className="text-danger">Password is required.</small>}
                             </FormGroup>
 
-                            <div className="mt-3">
+                            <div className="mt-4">
                                 <Button color="primary" className="btn btn-block w-100" type="submit">
                                     LOGIN
                                     {isProcessing ?? (
