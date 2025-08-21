@@ -21,6 +21,7 @@ export interface RegisterUserRequest {
     email: string;
     password: string;
     passwordConfirm: string;
+    role: string;
 }
 
 export interface LoginUserRequest {
@@ -28,30 +29,40 @@ export interface LoginUserRequest {
     password: string;
 }
 
-export interface ContactRequest {
-    email: string;
+export interface IssueSubmissionRequest {
+    description: string; 
+    photo?: File; 
+    audio?: File;
+    address: string;
+}
+
+export interface IIssue {
+    id: number;
+    description: string;
+    address: string;
+    priority: string;
+    status: string;
+    dateSubmitted: string;
+}
+
+export interface IComment {
+    id: number;
+    author: string;
+    timestamp: string;
     content: string;
 }
 
-export interface WeatherMain {
-    temp_max: number;
-    temp_min: number;
-    humidity: number;
-}
-
-export interface WeatherWind {
-    speed: number;
-}
-
-export interface WeatherDescription {
+export interface IIssueDetail {
+    id: number;
     description: string;
+    photo?: string;
+    audioTranscription?: string;
+    address: string;
+    priority: string;
+    status: string;
+    comments: IComment[];
 }
 
-export interface WeatherData {
-    main: WeatherMain;
-    wind: WeatherWind;
-    weather: WeatherDescription[];
-}
 
 export interface TokenResponse {
     accessToken?: string;

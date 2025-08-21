@@ -42,6 +42,7 @@ const CitizenRegister: React.FC = () => {
     }, [isSuccess, isError, error, navigate, data]);
 
     const onSubmit: SubmitHandler<RegisterUserRequest> = (formData) => {
+        formData.role = "Citizen";
         registerUser(formData);
     };
 

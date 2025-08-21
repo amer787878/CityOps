@@ -25,6 +25,10 @@ mongoose.connect(process.env.MONGO_URL)
         console.log('Connection Error => : ', error.message)
     });
 
+// Import routes
+const authRoute = require('./routes/auth');
+const userRoute = require('./routes/users');
+
 // Increase parse limit
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, '/public')));
@@ -44,8 +48,11 @@ app.use(cookieParser());
 
 // Route middleware
 app.get('/', (req, res) => {
-    res.send('City Sense API Server is running!');
+    res.send('CityOps API Server is running!');
 });
+
+app.use('/api/auth', authRoute);
+app.use('/api/users', userRoute);
 
 // Extended: https://swagger.io/specification/#infoObject
 const swaggerOptions = {

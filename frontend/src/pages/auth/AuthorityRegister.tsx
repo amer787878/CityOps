@@ -29,6 +29,7 @@ const AuthorityRegister: React.FC = () => {
 
         if (isError && error) {
             const errorData = (error as any)?.data;
+            console.log(errorData);
             const errorMessage = errorData?.message || "An error occurred. Please try again.";
 
             if (Array.isArray(errorData?.error)) {
@@ -42,6 +43,7 @@ const AuthorityRegister: React.FC = () => {
     }, [isSuccess, isError, error, navigate, data]);
 
     const onSubmit: SubmitHandler<RegisterUserRequest> = (formData) => {
+        formData.role = "Authority";
         registerUser(formData);
     };
 

@@ -119,7 +119,7 @@ const Login: React.FC = () => {
                             </div>
                             <div className="mt-4 d-flex justify-content-center">
                                 <p>
-                                    New on our platform?{' '}
+                                    Don’t have an account??{' '}
                                     <Link to="/register">
                                         <span className='fw-bold'>Create an account</span>
                                     </Link>

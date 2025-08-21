@@ -170,7 +170,7 @@ header {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 0 15px;
+  padding: 8px 15px;
 }
 
 .dropdown-menu {
@@ -428,4 +428,14 @@ a {
   width: 100%;
   max-width: 480px;
   height: auto;
+}
+
+.issue-card {
+  padding: 15px;
+}
+
+@media (max-width: 576px) {
+  .issue-card {
+    padding: 5px;
+  }
 }

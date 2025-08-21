@@ -65,22 +65,33 @@ const Header: React.FC = () => {
                 <Navbar expand="md" className="navbar-light">
                     <NavbarBrand
                         href={
-                            user ? (user.role === 'admin' ? '/admin/dashboard' : '/profile') : '/'
-                        }>
+                            user
+                                ? user.role === 'Admin'
+                                    ? '/admin/dashboard'
+                                    : user.role === 'Citizen'
+                                        ? '/citizen/issues'
+                                        : user.role === 'Authority'
+                                            ? '/authority/dashboard'
+                                            : '/'
+                                : '/'
+                        }
+                    >
                         <img
                             src={logoImg}
                             alt="CityOps"
                             className="logo-image"
                         />
+                        <span className="mx-3 text-white fw-bold">CityOps</span>
                     </NavbarBrand>
+
                     <NavbarToggler onClick={toggle} className="ms-auto" style={{ backgroundColor: 'white', borderColor: 'white' }} />
                     <Collapse isOpen={isOpen} navbar>
                         {!user && (
                             <>
                                 <Nav className="ms-auto" navbar>
                                     <NavItem className="nav-item-responsive">
-                                        <NavLink onClick={() => { navigate('/'); mobileToggle(); }}>
-                                            HOME
+                                        <NavLink onClick={() => { navigate('/explore-issues'); mobileToggle(); }}>
+                                            Explore Issues
                                         </NavLink>
                                     </NavItem>
                                     <UncontrolledDropdown nav inNavbar>
@@ -95,10 +106,28 @@ const Header: React.FC = () => {
                                 </Nav>
                             </>
                         )}
-                        {user && user.role === 'user' && (
+                        {user && user.role === 'Citizen' && (
                             <>
-                                {/* User-specific navigation */}
-                                {/* Add NavItems specific to the 'user' role */}
+                                <Nav className="ms-auto" navbar>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/citizen/issues'); mobileToggle(); }}>
+                                            Community Issues
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/citizen/my-issues'); mobileToggle(); }}>
+                                            My Issues
+                                        </NavLink>
+                                    </NavItem>
+                                    <UncontrolledDropdown nav inNavbar>
+                                        <DropdownToggle nav caret>
+                                            <img src={userImg} alt="user" className="user-img" />
+                                        </DropdownToggle>
+                                        <DropdownMenu end>
+                                            <DropdownItem onClick={onLogoutHandler}>Log out</DropdownItem>
+                                        </DropdownMenu>
+                                    </UncontrolledDropdown>
+                                </Nav>
                             </>
                         )}
                         {user && user.role === 'admin' && (
