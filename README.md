@@ -9,7 +9,7 @@ CityOps helps residents report city problems (potholes, broken lights, missed ga
 ## Current Progress
 - Project scaffolded with separate **frontend** and **backend**.
 - **UI only** for: **Home**, **Register**, **Login** (designs added).
-- Auth logic & DB wiring **not yet implemented**.
+- Auth logic & Mongo DB wiring.
 - **UI only** for: **Community`s issues**, **Issue submit**, **Issue detail** (designs added)
 
 ## Roadmap (next steps)
