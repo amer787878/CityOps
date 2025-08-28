@@ -130,10 +130,23 @@ const Header: React.FC = () => {
                                 </Nav>
                             </>
                         )}
-                        {user && user.role === 'admin' && (
+                        {user && user.role === 'Authority' && (
                             <>
-                                {/* Admin-specific navigation */}
-                                {/* Add NavItems specific to the 'admin' role */}
+                                <Nav className="ms-auto" navbar>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/authority/dashboard'); mobileToggle(); }}>
+                                            Dashboard
+                                        </NavLink>
+                                    </NavItem>
+                                    <UncontrolledDropdown nav inNavbar>
+                                        <DropdownToggle nav caret>
+                                            <img src={userImg} alt="user" className="user-img" />
+                                        </DropdownToggle>
+                                        <DropdownMenu end>
+                                            <DropdownItem onClick={onLogoutHandler}>Log out</DropdownItem>
+                                        </DropdownMenu>
+                                    </UncontrolledDropdown>
+                                </Nav>
                             </>
                         )}
                     </Collapse>
