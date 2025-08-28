@@ -28,6 +28,7 @@ mongoose.connect(process.env.MONGO_URL)
 // Import routes
 const authRoute = require('./routes/auth');
 const userRoute = require('./routes/users');
+const issueRoute = require('./routes/issues');
 
 // Increase parse limit
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
@@ -53,6 +54,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
+app.use('/api/issues', issueRoute);
 
 // Extended: https://swagger.io/specification/#infoObject
 const swaggerOptions = {
@@ -70,7 +72,7 @@ const swaggerOptions = {
               type: 'http',
               scheme: 'bearer',
               bearerFormat: 'JWT',
-              description: 'Enter your JWT token inside this field to authenticate your requests. The format should be: Bearer {your_token_here}'
+              description: 'Enter your JWT token inside this field to authenticate your requests. The format should be: {your_token_here}'
             }
           }
         },
