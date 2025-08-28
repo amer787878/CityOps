@@ -11,6 +11,8 @@ CityOps helps residents report city problems (potholes, broken lights, missed ga
 - **UI only** for: **Home**, **Register**, **Login** (designs added).
 - Auth logic & Mongo DB wiring.
 - **UI only** for: **Community`s issues**, **Issue submit**, **Issue detail** (designs added)
+- **UI Only** for: Authority Dashboard & Basic admin page.
+- **Backend logic**: Added issue submission basic route with logic (not using AI classification yet)
 
 ## Roadmap (next steps)
 - Implement auth (API, MongoDB Users, JWT) and connect Register/Login forms.
