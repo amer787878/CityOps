@@ -113,7 +113,9 @@ const CitizenRegister: React.FC = () => {
                                         },
                                     })}
                                 />
-                                {errors.email && <small className="text-danger">{errors.email.message}</small>}
+                                {errors.email && (
+                                    <small className="text-danger">{errors.email.message}</small>
+                                )}
                             </FormGroup>
 
 

@@ -98,14 +98,17 @@ const IssueSubmission: React.FC = () => {
                         <FormGroup>
                             <Label for="address">Address</Label>
                             <GooglePlacesAutocomplete
-                                apiKey="YOUR_GOOGLE_MAPS_API_KEY" // Replace with your actual API key
+                                apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
                                 onPlaceSelected={(place) => setAddress(place.formatted_address || '')}
                                 options={{
-                                    types: ['address'], // Limit to addresses only
+                                    types: ['address'],
                                     componentRestrictions: { country: 'IL' }, // Restrict to Israel
                                 }}
                                 className="form-control"
                             />
+                            {Object.keys(errors).length && errors.address ? (
+                                <small className="text-danger mt-1">{errors.address.message}</small>
+                            ) : null}
                         </FormGroup>
 
                         {/* Buttons */}

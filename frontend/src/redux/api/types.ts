@@ -4,13 +4,11 @@ export interface GenericResponse {
 }
 
 export interface IUser {
-    username: string;
-    firstname: string;
-    lastname: string;
+    fullname: string;
     email: string;
     lastLogin: string;
     role: string;
-    avatar?: string;
+    status: string;
     _id: string;
     createdAt: string;
     updatedAtt: string;
@@ -30,8 +28,8 @@ export interface LoginUserRequest {
 }
 
 export interface IssueSubmissionRequest {
-    description: string; 
-    photo?: File; 
+    description: string;
+    photo?: File;
     audio?: File;
     address: string;
 }
@@ -73,49 +71,19 @@ export interface RefreshResult {
     userData: any;
 }
 
-export interface IProductRequest {
-    name: string;
-    detail: string;
-    stock: number;
-    price: number;
-    productImg: string;
-}
-
-export interface IProductResponse {
-    _id: string;
-    name: string;
-    detail: string;
-    stock: number;
-    price: number;
-    productImg: string;
-    user: IUser;
-    createdAt: string;
-    updated_at: string;
-}
-
-export interface UploadProductImageRequest {
-    productFile: File;
-}
-
-export interface ProductImageResult {
-    imageUri: string;
+export interface UserType {
+    fullname: string;
+    email: string;
+    role: string;
+    status: string;
 };
 
-export interface UploadReviewImageRequest {
-    reviewFile: File;
+export interface IUserRequest {
+    fullname: string;
+    email: string;
+    role: 'Admin' | 'Authority' | 'Citizen';
+    status: 'Active' | 'Pending' | 'Suspended';
 }
-
-export interface ReviewImageResult {
-    imageUri: string;
-};
-
-export interface LastFlightRequest {
-    date: string;
-    item: string;
-    duration: string;
-    location: string;
-    comment: string;
-};
 
 export interface ProfileRequest {
     username: string;

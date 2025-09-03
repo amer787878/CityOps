@@ -16,6 +16,9 @@ import IssueSubmission from './pages/IssueSubmission';
 import MyIssues from './pages/MyIssues';
 import IssueDetails from './pages/IssueDetails';
 import AuthorityDashboard from './pages/AuthorityDashboard';
+import AdminUser from './pages/AdminUser';
+import AdminLogin from './pages/auth/AdminLogin';
+import AdminUserEdit from './pages/AdminUserEdit';
 
 const App: React.FC = () => {
   const getHomeRoute = () => {
@@ -42,6 +45,11 @@ const App: React.FC = () => {
           <Route element={<RequiredUser allowedRoles={['Authority']} />}>
             <Route path="authority/dashboard" element={<AuthorityDashboard />} />
           </Route>
+          <Route element={<RequiredUser allowedRoles={['Admin']} />}>
+            <Route path="admin/users" element={<AdminUser />} />
+            <Route path="admin/users/:id" element={<AdminUserEdit />} />
+          </Route>
+          <Route path="admin/login" element={<AdminLogin />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="register-citizen" element={<CitizenRegister />} />

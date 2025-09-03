@@ -67,7 +67,7 @@ const Header: React.FC = () => {
                         href={
                             user
                                 ? user.role === 'Admin'
-                                    ? '/admin/dashboard'
+                                    ? '/admin/moderation'
                                     : user.role === 'Citizen'
                                         ? '/citizen/issues'
                                         : user.role === 'Authority'
@@ -136,6 +136,30 @@ const Header: React.FC = () => {
                                     <NavItem className="nav-item-responsive">
                                         <NavLink onClick={() => { navigate('/authority/dashboard'); mobileToggle(); }}>
                                             Dashboard
+                                        </NavLink>
+                                    </NavItem>
+                                    <UncontrolledDropdown nav inNavbar>
+                                        <DropdownToggle nav caret>
+                                            <img src={userImg} alt="user" className="user-img" />
+                                        </DropdownToggle>
+                                        <DropdownMenu end>
+                                            <DropdownItem onClick={onLogoutHandler}>Log out</DropdownItem>
+                                        </DropdownMenu>
+                                    </UncontrolledDropdown>
+                                </Nav>
+                            </>
+                        )}
+                        {user && user.role === 'Admin' && (
+                            <>
+                                <Nav className="ms-auto" navbar>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/admin/moderation'); mobileToggle(); }}>
+                                            Morderation
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/admin/users'); mobileToggle(); }}>
+                                            Users
                                         </NavLink>
                                     </NavItem>
                                     <UncontrolledDropdown nav inNavbar>

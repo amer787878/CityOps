@@ -1,211 +1,236 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Table,
     Button,
     Row,
     Col,
     Card,
-    CardBody,
-    Input,
     Modal,
     ModalHeader,
     ModalBody,
     ModalFooter,
+    Badge,
+    UncontrolledDropdown,
+    DropdownToggle,
+    DropdownMenu,
+    DropdownItem,
 } from 'reactstrap';
+import DataTable, { TableColumn } from 'react-data-table-component';
+import { toast } from 'react-toastify';
 import Select from 'react-select';
-
-interface IUser {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-}
+import { useDeleteUserMutation, useGetUsersQuery, useSuspendUserMutation } from '../redux/api/userAPI';
+import { IUser } from '../redux/api/types';
+import { Archive, ChevronDown, MoreVertical, Slash, Trash2 } from 'react-feather';
+import FullScreenLoader from '../components/FullScreenLoader';
+import { useNavigate } from 'react-router-dom';
 
 const AdminUser: React.FC = () => {
-    const [users, setUsers] = useState<IUser[]>([]);
-    const [filteredUsers, setFilteredUsers] = useState<IUser[]>([]);
-    const [filters, setFilters] = useState({
-        role: '',
-        status: '',
-    });
-    const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
-    const [newRole, setNewRole] = useState<string>('');
-    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [status, setStatus] = useState<string>('');
+    const [role, setRole] = useState<string>('');
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [modalDeleteVisibility, setModalDeleteVisibility] = useState<boolean>(false);
+    const [modalSuspendVisibility, setModalSuspendVisibility] = useState<boolean>(false);
+    const navigate = useNavigate();
+
+    const queryParams = {
+        status: status,
+        role: role
+    };
+    const { data: users, refetch, isLoading } = useGetUsersQuery(queryParams);
+    const [deleteUser] = useDeleteUserMutation();
+    const [suspendUser] = useSuspendUserMutation();
 
     useEffect(() => {
-        // Mock data or fetch from API
-        const mockUsers: IUser[] = [
-            { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Citizen', status: 'Active' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Authority', status: 'Suspended' },
-            { id: 3, name: 'Admin User', email: 'admin@example.com', role: 'Admin', status: 'Active' },
-        ];
-        setUsers(mockUsers);
-        setFilteredUsers(mockUsers);
-    }, []);
+        refetch();
+    }, [status, role, refetch]);
 
-    useEffect(() => {
-        let data = users;
+    const handleFilterChange = (filterKey: 'role' | 'status', value: string) => {
+        if (filterKey === 'role') setRole(value);
+        if (filterKey === 'status') setStatus(value);
+    };
 
-        if (filters.role) {
-            data = data.filter((user) => user.role === filters.role);
+    const toggleDeleteModal = (id: string | null = null) => {
+        setSelectedId(id);
+        setModalDeleteVisibility(!modalDeleteVisibility);
+    };
+
+    const toggleSuspendModal = (id: string | null = null) => {
+        setSelectedId(id);
+        setModalSuspendVisibility(!modalSuspendVisibility);
+    };
+
+    const handleDeleteUser = async () => {
+        try {
+            if (selectedId) {
+                await deleteUser(selectedId).unwrap();
+                toast.success('User deleted successfully');
+                refetch();
+            }
+        } catch (error: any) {
+            toast.error(`${error.message || error.data.message}`);
+        } finally {
+            setModalDeleteVisibility(false);
         }
+    };
 
-        if (filters.status) {
-            data = data.filter((user) => user.status === filters.status);
+    const handleSuspendUser = async () => {
+        try {
+            if (selectedId) {
+                await suspendUser(selectedId).unwrap();
+                toast.success('User suspended successfully!');
+                refetch();
+            }
+        } catch (error: any) {
+            toast.error(`${error.message || error.data.message}`);
+        } finally {
+            setModalSuspendVisibility(false);
         }
-
-        setFilteredUsers(data);
-    }, [filters, users]);
-
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
-    };
-
-    const handleEditRole = (user: IUser) => {
-        setSelectedUser(user);
-        setNewRole(user.role);
-        setModalOpen(true);
-    };
-
-    const handleConfirmRoleChange = () => {
-        if (selectedUser) {
-            setUsers((prev) =>
-                prev.map((user) =>
-                    user.id === selectedUser.id ? { ...user, role: newRole } : user
-                )
-            );
-            console.log(`Role updated for ${selectedUser.name} to ${newRole}`);
-        }
-        setModalOpen(false);
-    };
-
-    const handleSuspendAccount = (id: number) => {
-        setUsers((prev) =>
-            prev.map((user) =>
-                user.id === id ? { ...user, status: 'Suspended' } : user
-            )
-        );
-        console.log(`User ${id} suspended.`);
-    };
-
-    const handleDeleteAccount = (id: number) => {
-        setUsers((prev) => prev.filter((user) => user.id !== id));
-        console.log(`User ${id} deleted.`);
     };
 
     const roleOptions = [
-        { value: 'Citizen', label: 'Citizen' },
-        { value: 'Authority', label: 'Authority' },
         { value: 'Admin', label: 'Admin' },
+        { value: 'Authority', label: 'Authority' },
+        { value: 'Citizen', label: 'Citizen' },
     ];
 
     const statusOptions = [
         { value: 'Active', label: 'Active' },
+        { value: 'Pending', label: 'Pending' },
         { value: 'Suspended', label: 'Suspended' },
     ];
 
+    const renderBadge = (type: 'role' | 'status', value: string) => {
+        const badgeColors: Record<string, string> = {
+            Admin: 'info',
+            Citizen: 'success',
+            Authority: 'primary',
+            Active: 'primary',
+            Pending: 'warning',
+            Suspended: 'danger',
+        };
+        return (
+            <Badge color={badgeColors[value] || 'secondary'} className="px-3 py-2" pill>
+                {value}
+            </Badge>
+        );
+    };
+
+    const columns: TableColumn<IUser>[] = [
+        {
+            name: 'Fullname',
+            selector: (row) => row.fullname,
+            sortable: true,
+        },
+        {
+            name: 'Email',
+            selector: (row) => row.email,
+            sortable: true,
+        },
+        {
+            name: 'Role',
+            cell: (row) => renderBadge('role', row.role),
+        },
+        {
+            name: 'Status',
+            cell: (row) => renderBadge('status', row.status),
+        },
+        {
+            name: 'Actions',
+            width: '120px',
+            cell: (row) => (
+                <>
+                    {row.role !== 'Admin' && (
+                        <UncontrolledDropdown>
+                            <DropdownToggle tag="div" className="btn btn-sm">
+                                <MoreVertical size={14} className="cursor-pointer action-btn" />
+                            </DropdownToggle>
+                            <DropdownMenu end container="body">
+                                <DropdownItem className="w-100" onClick={() => navigate(`/admin/users/${row._id}`)}>
+                                    <Archive size={14} className="mx-1" />
+                                    <span className="align-middle mx-2">Edit</span>
+                                </DropdownItem>
+                                <DropdownItem onClick={() => toggleSuspendModal(row._id)}>
+                                    <Slash size={14} className="mx-1" />
+                                    <span className="align-middle mx-2">Suspend</span>
+                                </DropdownItem>
+                                <DropdownItem onClick={() => toggleDeleteModal(row._id)}>
+                                    <Trash2 size={14} className="mx-1" />
+                                    <span className="align-middle mx-2">Delete</span>
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </UncontrolledDropdown>
+                    )}
+                </>
+            ),
+        },
+    ];
+
     return (
-        <div className="container">
-            <Row className="my-3">
-                <Col>
-                    <h3>User Management</h3>
-                </Col>
-            </Row>
+        <>
+            {isLoading ? (
+                <FullScreenLoader />
+            ) : (
+                <div className="container main-board">
+                    <Row className="my-3">
+                        <Col>
+                            <h3>User Management</h3>
+                        </Col>
+                    </Row>
 
-            <Row className="mb-3">
-                <Col md={4}>
-                    <Select
-                        options={roleOptions}
-                        onChange={(e) => handleFilterChange('role', e?.value || '')}
-                        placeholder="Filter by Role"
-                    />
-                </Col>
-                <Col md={4}>
-                    <Select
-                        options={statusOptions}
-                        onChange={(e) => handleFilterChange('status', e?.value || '')}
-                        placeholder="Filter by Status"
-                    />
-                </Col>
-            </Row>
+                    <Row className="mb-3">
+                        <Col md={4}>
+                            <Select
+                                options={roleOptions}
+                                onChange={(e) => handleFilterChange('role', e?.value || '')}
+                                placeholder="Filter by Role"
+                            />
+                        </Col>
+                        <Col md={4}>
+                            <Select
+                                options={statusOptions}
+                                onChange={(e) => handleFilterChange('status', e?.value || '')}
+                                placeholder="Filter by Status"
+                            />
+                        </Col>
+                    </Row>
 
-            <Row>
-                <Col>
-                    <Card>
-                        <CardBody>
-                            <Table responsive>
-                                <thead>
-                                    <tr>
-                                        <th>User ID</th>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredUsers.map((user) => (
-                                        <tr key={user.id}>
-                                            <td>{user.id}</td>
-                                            <td>{user.name}</td>
-                                            <td>{user.email}</td>
-                                            <td>{user.role}</td>
-                                            <td>{user.status}</td>
-                                            <td>
-                                                <Button
-                                                    color="primary"
-                                                    size="sm"
-                                                    onClick={() => handleEditRole(user)}
-                                                >
-                                                    Edit Role
-                                                </Button>{' '}
-                                                <Button
-                                                    color="warning"
-                                                    size="sm"
-                                                    onClick={() => handleSuspendAccount(user.id)}
-                                                >
-                                                    Suspend
-                                                </Button>{' '}
-                                                <Button
-                                                    color="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteAccount(user.id)}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-                        </CardBody>
-                    </Card>
-                </Col>
-            </Row>
+                    <Row>
+                        <Col>
+                            <Card>
+                                <DataTable
+                                    title="Users"
+                                    data={users || []}
+                                    responsive
+                                    className="react-dataTable"
+                                    noHeader
+                                    pagination
+                                    paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                                    columns={columns}
+                                    sortIcon={<ChevronDown />}
+                                />
+                            </Card>
+                        </Col>
+                    </Row>
 
-            {/* Edit Role Modal */}
-            <Modal isOpen={modalOpen} toggle={() => setModalOpen(!modalOpen)}>
-                <ModalHeader toggle={() => setModalOpen(!modalOpen)}>Edit Role</ModalHeader>
-                <ModalBody>
-                    <Select
-                        options={roleOptions}
-                        value={roleOptions.find((option) => option.value === newRole)}
-                        onChange={(e) => setNewRole(e?.value || '')}
-                        placeholder="Select a new role"
-                    />
-                </ModalBody>
-                <ModalFooter>
-                    <Button color="primary" onClick={handleConfirmRoleChange}>
-                        Confirm
-                    </Button>{' '}
-                    <Button color="secondary" onClick={() => setModalOpen(false)}>
-                        Cancel
-                    </Button>
-                </ModalFooter>
-            </Modal>
-        </div>
+                    <Modal isOpen={modalDeleteVisibility} toggle={() => toggleDeleteModal()}>
+                        <ModalHeader toggle={() => toggleDeleteModal()}>Delete Confirmation</ModalHeader>
+                        <ModalBody>Are you sure you want to delete?</ModalBody>
+                        <ModalFooter>
+                            <Button color="danger" onClick={handleDeleteUser}>Delete</Button>
+                            <Button color="secondary" onClick={() => toggleDeleteModal()} outline>No</Button>
+                        </ModalFooter>
+                    </Modal>
+
+                    <Modal isOpen={modalSuspendVisibility} toggle={() => toggleSuspendModal()}>
+                        <ModalHeader toggle={() => toggleSuspendModal()}>Suspend Confirmation</ModalHeader>
+                        <ModalBody>Are you sure you want to suspend?</ModalBody>
+                        <ModalFooter>
+                            <Button color="danger" onClick={handleSuspendUser}>Suspend</Button>
+                            <Button color="secondary" onClick={() => toggleSuspendModal()} outline>No</Button>
+                        </ModalFooter>
+                    </Modal>
+                </div>
+            )}
+        </>
     );
 };
 
