@@ -34,8 +34,20 @@ export interface IssueSubmissionRequest {
     address: string;
 }
 
+export interface TeamCreateRequest {
+    name: string;
+    image: string;
+    members: Array<string>;
+}
+
+export interface TeamUpdateRequest {
+    name: string;
+    image: string;
+    members: Array<string>;
+}
+
 export interface IIssue {
-    id: number;
+    _id: number;
     description: string;
     address: string;
     priority: string;
@@ -49,6 +61,16 @@ export interface IComment {
     timestamp: string;
     content: string;
 }
+
+export interface ITeam {
+    _id: string;
+    name: string;
+    image: string;
+    members: string[]; 
+    createdAt: string;
+    updatedAt?: string;
+}
+
 
 export interface IIssueDetail {
     id: number;

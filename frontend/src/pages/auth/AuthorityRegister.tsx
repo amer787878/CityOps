@@ -104,7 +104,7 @@ const AuthorityRegister: React.FC = () => {
                                 <input
                                     type="email"
                                     id="email"
-                                    placeholder="example@example.com"
+                                    placeholder="authority@authority.com"
                                     className={`form-control ${classnames({ 'is-invalid': errors.email })}`}
                                     {...register('email', {
                                         required: 'Email is required.',

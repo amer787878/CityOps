@@ -27,7 +27,7 @@ const MyIssues: React.FC = () => {
     const columns = () => [
         {
             name: "Issue ID",
-            selector: (row: { id: number }) => row.id,
+            selector: (row: { _id: number }) => row._id,
             sortable: true,
         },
         {
@@ -67,7 +67,7 @@ const MyIssues: React.FC = () => {
                         <DropdownMenu end container="body">
                             <DropdownItem
                                 className="w-100"
-                                onClick={() => navigate(`/citizen/issue-detail/${row.id}`)}
+                                onClick={() => navigate(`/citizen/issue-detail/${row._id}`)}
                             >
                                 <Eye size={14} className="mx-1" />
                                 <span className="align-middle mx-2">View Details</span>
@@ -83,7 +83,7 @@ const MyIssues: React.FC = () => {
         // Mock data (Replace this with API call)
         const mockData = [
             {
-                id: 1,
+                _id: 1,
                 description: "Pothole on Main Street",
                 address: "123 Main St, Cityville",
                 priority: "Critical",
@@ -91,7 +91,7 @@ const MyIssues: React.FC = () => {
                 dateSubmitted: "2024-12-10",
             },
             {
-                id: 2,
+                _id: 2,
                 description: "Broken streetlight on Elm Ave",
                 address: "456 Elm Ave, Cityville",
                 priority: "Moderate",

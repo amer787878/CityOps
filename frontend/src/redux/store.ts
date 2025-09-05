@@ -4,12 +4,14 @@ import { authAPI } from './api/authAPI';
 import { getMeAPI } from './api/getMeAPI';
 import userReducer from './api/userSlice';
 import { userAPI } from './api/userAPI';
+import { teamAPI } from './api/teamAPI';
 
 export const store = configureStore({
   reducer: {
     [authAPI.reducerPath]: authAPI.reducer,
     [getMeAPI.reducerPath]: getMeAPI.reducer,
     [userAPI.reducerPath]: userAPI.reducer,
+    [teamAPI.reducerPath]: teamAPI.reducer,
     userState: userReducer
 
   },
@@ -19,6 +21,7 @@ export const store = configureStore({
         authAPI.middleware,
         getMeAPI.middleware,
         userAPI.middleware,
+        teamAPI.middleware,
     ]),
 });
 

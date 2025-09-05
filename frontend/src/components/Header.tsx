@@ -99,8 +99,8 @@ const Header: React.FC = () => {
                                             <img src={userImg} alt="user" className="user-img" />
                                         </DropdownToggle>
                                         <DropdownMenu end>
-                                            <DropdownItem onClick={() => navigate('/login')}>SIGN IN</DropdownItem>
-                                            <DropdownItem onClick={() => navigate('/register')}>SIGN UP</DropdownItem>
+                                            <DropdownItem onClick={() => navigate('/login')}>Log In</DropdownItem>
+                                            <DropdownItem onClick={() => navigate('/register')}>Register</DropdownItem>
                                         </DropdownMenu>
                                     </UncontrolledDropdown>
                                 </Nav>
@@ -136,6 +136,11 @@ const Header: React.FC = () => {
                                     <NavItem className="nav-item-responsive">
                                         <NavLink onClick={() => { navigate('/authority/dashboard'); mobileToggle(); }}>
                                             Dashboard
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/authority/teams'); mobileToggle(); }}>
+                                            Teams
                                         </NavLink>
                                     </NavItem>
                                     <UncontrolledDropdown nav inNavbar>

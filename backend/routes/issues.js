@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const { query, body, validationResult } = require('express-validator');
 const multer = require("multer");
-const path = require('path');
 const Issue = require('../models/Issue');
 const { classifyIssue } = require('../utils/utils');
 const verifyToken = require('../utils/verifyToken');

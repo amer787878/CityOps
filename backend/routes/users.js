@@ -384,16 +384,16 @@ router.put('/update/:id', verifyToken(['Admin']), async (req, res) => {
  */
 router.get('/getOneUser/:id', verifyToken(['Admin']), async (req, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).send('Malformed user id');
+        return res.status(400).send('Malformed user id');
     }
-  
+
     const user = await User.findById(req.params.id).select('-__v');
     if (!user) {
-      return res.status(400).send('user not found');
+        return res.status(400).send('user not found');
     }
-  
+
     return res.send(user);
-  });
+});
 
 
 module.exports = router;

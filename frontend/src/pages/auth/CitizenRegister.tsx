@@ -103,7 +103,7 @@ const CitizenRegister: React.FC = () => {
                                 <input
                                     type="email"
                                     id="email"
-                                    placeholder="example@example.com"
+                                    placeholder="citizen@citizen.com"
                                     className={`form-control ${classnames({ 'is-invalid': errors.email })}`}
                                     {...register('email', {
                                         required: 'Email is required.',
