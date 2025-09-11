@@ -143,6 +143,16 @@ const Header: React.FC = () => {
                                             Teams
                                         </NavLink>
                                     </NavItem>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/authority/team-assigns'); mobileToggle(); }}>
+                                            Team Assign
+                                        </NavLink>
+                                    </NavItem>
+                                    <NavItem className="nav-item-responsive">
+                                        <NavLink onClick={() => { navigate('/authority/notifications'); mobileToggle(); }}>
+                                            Notifications
+                                        </NavLink>
+                                    </NavItem>
                                     <UncontrolledDropdown nav inNavbar>
                                         <DropdownToggle nav caret>
                                             <img src={userImg} alt="user" className="user-img" />

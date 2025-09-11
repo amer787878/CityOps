@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Col, Row, Button, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledDropdown } from 'reactstrap';
+import { Col, Row, Button, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledDropdown, Card, CardBody } from 'reactstrap';
 import DataTable from 'react-data-table-component';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
@@ -200,15 +200,46 @@ const AuthorityDashboard: React.FC = () => {
                     <h3>Authority Dashboard</h3>
                 </Col>
             </Row>
-            <Row className="my-3">
-                <Col>
-                    <div className="stats d-flex justify-content-between">
-                        <div>Total Issues: {stats.total}</div>
-                        <div>Pending: {stats.pending}</div>
-                        <div>In Progress: {stats.inProgress}</div>
-                        <div>Resolved: {stats.resolved}</div>
-                        <div>Critical: {stats.critical}</div>
-                    </div>
+            <Row>
+                <Col md={3}>
+                    <Card className="bg-primary">
+                        <CardBody>
+                            <div className="text-white">
+                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Total Issues</h6>
+                                <h2 className="mb-4 text-white">1,587</h2>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card className="bg-warning">
+                        <CardBody>
+                            <div className="text-white">
+                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Pending Issues</h6>
+                                <h2 className="mb-4 text-white">10</h2>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card className="bg-success">
+                        <CardBody>
+                            <div className="text-white">
+                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Resolved Issues</h6>
+                                <h2 className="mb-4 text-white">1100</h2>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </Col>
+                <Col md={3}>
+                    <Card className="bg-info">
+                        <CardBody>
+                            <div className="text-white">
+                                <h6 className="text-uppercase mb-3 font-size-16 text-white">InProgress Issues</h6>
+                                <h2 className="mb-4 text-white">1</h2>
+                            </div>
+                        </CardBody>
+                    </Card>
                 </Col>
             </Row>
             <Row className="my-3">

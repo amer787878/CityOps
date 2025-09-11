@@ -30,6 +30,7 @@ const authRoute = require('./routes/auth');
 const userRoute = require('./routes/users');
 const issueRoute = require('./routes/issues');
 const teamRoute = require('./routes/teams');
+const notificationRoute = require('./routes/notifications');
 
 // Increase parse limit
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
 app.use('/api/issues', issueRoute);
 app.use('/api/teams', teamRoute);
+app.use('/api/notifications', notificationRoute);
 
 // Extended: https://swagger.io/specification/#infoObject
 const swaggerOptions = {
