@@ -23,6 +23,54 @@ const upload = multer({
     },
 });
 
+/**
+ * @swagger
+ * /api/teams:
+ *   get:
+ *     summary: Retrieve all teams
+ *     description: Fetches a list of all teams with their members and team information
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved teams
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "603e2b9e8e0f8e6d88f7b123"
+ *                   name:
+ *                     type: string
+ *                     example: "Team Alpha"
+ *                   image:
+ *                     type: string
+ *                     example: "https://example.com/team-image.png"
+ *                   members:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         fullname:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         email:
+ *                           type: string
+ *                           example: "john.doe@example.com"
+ *                         role:
+ *                           type: string
+ *                           example: "Manager"
+ *       401:
+ *         description: Unauthorized, invalid token
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/', verifyToken(['Authority']), async (req, res) => {
     try {
         const teams = await Team.find()
@@ -38,7 +86,79 @@ router.get('/', verifyToken(['Authority']), async (req, res) => {
     }
 });
 
-
+/**
+ * @swagger
+ * /api/teams/create:
+ *   post:
+ *     summary: Create a new team
+ *     description: Creates a new team with a name, members, and an image.
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Name of the team.
+ *                 example: "Team Alpha"
+ *               members:
+ *                 type: string
+ *                 description: JSON string representing an array of member IDs.
+ *                 example: '["603e2b9e8e0f8e6d88f7b123", "603e2b9e8e0f8e6d88f7b124"]'
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Team image file.
+ *     responses:
+ *       200:
+ *         description: Team created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "The team data was created successfully!"
+ *       400:
+ *         description: Missing required fields or invalid data format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Missing required fields. Ensure 'name', 'members', and 'image' are provided."
+ *                 reasonPhrase:
+ *                   type: string
+ *                   example: "InvalidRequestBodyError"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to create the team. Database error message."
+ */
 router.post('/create', verifyToken(['Authority']), upload.single("image"), async (req, res) => {
     if (!req.body.name || !req.body.members || !req.file) {
         return res.status(400).send({
@@ -86,6 +206,103 @@ router.post('/create', verifyToken(['Authority']), upload.single("image"), async
     }
 });
 
+/**
+ * @swagger
+ * /teams/update/{id}:
+ *   put:
+ *     summary: Update a team's details
+ *     description: Updates a team's name, members, or image based on the provided fields.
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the team to be updated
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "603e2b9e8e0f8e6d88f7b123"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Updated name for the team.
+ *                 example: "Team Beta"
+ *               members:
+ *                 type: string
+ *                 description: JSON string representing an array of updated member IDs.
+ *                 example: '["603e2b9e8e0f8e6d88f7b124", "603e2b9e8e0f8e6d88f7b125"]'
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Updated team image file.
+ *     responses:
+ *       200:
+ *         description: Team successfully updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "The team data was updated successfully!"
+ *       400:
+ *         description: Missing required fields or invalid data format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "At least one field (name, members, or image) must be provided for the update."
+ *                 reasonPhrase:
+ *                   type: string
+ *                   example: "EmptyRequestBodyError"
+ *       404:
+ *         description: Team not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "The specified team does not exist."
+ *                 reasonPhrase:
+ *                   type: string
+ *                   example: "TeamNotFoundError"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to update the team. Database error message."
+ */
 router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), async (req, res) => {
     const { id } = req.params;
 
@@ -156,7 +373,62 @@ router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), as
     }
 });
 
-
+/**
+ * @swagger
+ * /api/teams/getOneTeam/{id}:
+ *   get:
+ *     summary: Retrieve a single team by its ID
+ *     description: Fetches the details of a single team by ID from the database
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the team to fetch
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "603e2b9e8e0f8e6d88f7b123"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the team
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                   example: "603e2b9e8e0f8e6d88f7b123"
+ *                 name:
+ *                   type: string
+ *                   example: "Team Alpha"
+ *                 image:
+ *                   type: string
+ *                   example: "https://example.com/image.png"
+ *                 members:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       fullname:
+ *                         type: string
+ *                         example: "John Doe"
+ *                       email:
+ *                         type: string
+ *                         example: "john.doe@example.com"
+ *                       role:
+ *                         type: string
+ *                         example: "Manager"
+ *       400:
+ *         description: Invalid ID format or team not found
+ *       401:
+ *         description: Unauthorized, invalid token
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/getOneTeam/:id', verifyToken(['Authority']), async (req, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
         return res.status(400).send('Malformed team id');
@@ -170,11 +442,93 @@ router.get('/getOneTeam/:id', verifyToken(['Authority']), async (req, res) => {
     return res.send(team);
 });
 
+/**
+ * @swagger
+ * /api/teams/delete/{id}:
+ *   delete:
+ *     summary: Delete a team by its ID
+ *     description: Deletes a specific team from the database using its ID.
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the team to delete
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "603e2b9e8e0f8e6d88f7b123"
+ *     responses:
+ *       200:
+ *         description: Team successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Team successfully deleted!"
+ *       400:
+ *         description: Invalid or malformed ID
+ *       401:
+ *         description: Unauthorized, invalid token
+ *       500:
+ *         description: Internal server error
+ */
 router.delete('/delete/:id', verifyToken(['Authority']), async (req, res) => {
     await Team.deleteOne({ _id: req.params.id });
     return res.send({ message: 'Team successfully deleted!' });
 });
 
+/**
+ * @swagger
+ * /api/teams/getTeamMembers:
+ *   get:
+ *     summary: Retrieve all team members with the "Authority" role
+ *     description: Returns a list of users who have the role of "Authority."
+ *     tags:
+ *       - Teams
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of team members with "Authority" role
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "603e2b9e8e0f8e6d88f7b123"
+ *                   fullname:
+ *                     type: string
+ *                     example: "Jane Doe"
+ *                   email:
+ *                     type: string
+ *                     example: "jane.doe@example.com"
+ *                   role:
+ *                     type: string
+ *                     example: "Authority"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "error"
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to retrieve team members."
+ */
 router.get('/getTeamMembers', verifyToken(['Authority']), async (req, res) => {
     const authorities = await User.find({ role: 'Authority' });
     return res.send(authorities);

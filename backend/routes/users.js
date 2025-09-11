@@ -247,6 +247,10 @@ router.put('/suspend/:id', verifyToken(['Admin']), async (req, res) => {
  *   put:
  *     summary: Update user details
  *     description: Allows an admin to update user details. Only accessible by users with 'Admin' role via token verification.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - name: id
  *         in: path
@@ -342,6 +346,8 @@ router.put('/update/:id', verifyToken(['Admin']), async (req, res) => {
  *   get:
  *     summary: Retrieve a single user's details
  *     description: Fetch the details of a specific user by ID. Only accessible by users with 'Admin' role via token verification.
+ *     tags:
+ *       - User
  *     parameters:
  *       - name: id
  *         in: path
