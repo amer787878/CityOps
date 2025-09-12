@@ -14,12 +14,16 @@ CityOps helps residents report city problems (potholes, broken lights, missed ga
 - **UI Only** for: Authority Dashboard & Basic admin page.
 - **Backend logic**: Added issue submission basic route with logic (not using AI classification yet)
 - Admin login + Team management for authority
+- Added Authority dashboard fully (backend + frontend)
+- Added community issues fully (backend+frontend)
 
 ## Roadmap (next steps)
-- Implement auth (API, MongoDB Users, JWT) and connect Register/Login forms.
-- “Create Report” flow: description, photo upload, Google Maps autocomplete.
-- Basic Staff Dashboard: list/filter by priority/type/status.
-- AI classification stub → replace with GPT integration.
+- Integrate AI classification using chatGPT to issue submission.
+- Added notifications
+- Add team assignment to issue
+- Add analytics page for authority
+- Add community comments and upvotes
+- Add admin moderation for comments on issues
 
 ## Run (dev)
 ```bash

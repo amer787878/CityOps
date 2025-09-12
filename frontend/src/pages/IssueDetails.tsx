@@ -2,42 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Col, Row, Input, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
 import { useParams } from 'react-router-dom';
 import { IComment, IIssueDetail } from '../redux/api/types';
+import { useGetIssueQuery } from '../redux/api/issueAPI';
 
 const IssueDetails: React.FC = () => {
-    const { issueId } = useParams<{ issueId: string }>();
-    const [issue, setIssue] = useState<IIssueDetail | null>(null);
-    const [newComment, setNewComment] = useState<string>('');
-    const [comments, setComments] = useState<IComment[]>([]);
+    const { id } = useParams<{ id: string }>();
+    const { data: issue, refetch: refetchIssue } = useGetIssueQuery(id ?? '', {
+        skip: !id,
+    });
 
     useEffect(() => {
-        // Mock data or replace with API call to fetch issue details
-        const mockIssue: IIssueDetail = {
-            id: Number(issueId),
-            description: 'Pothole on Main Street, causing traffic issues.',
-            photo: 'https://via.placeholder.com/300', // Replace with actual image URL
-            audioTranscription: 'The pothole is approximately 2 feet wide and 6 inches deep.',
-            address: '123 Main St, Cityville',
-            priority: 'Critical',
-            status: 'Pending',
-            comments: [
-                {
-                    id: 1,
-                    author: 'John Doe',
-                    timestamp: '2024-12-10 10:30 AM',
-                    content: 'This issue has been here for months.',
-                },
-                {
-                    id: 2,
-                    author: 'Jane Smith',
-                    timestamp: '2024-12-10 11:00 AM',
-                    content: 'I almost damaged my car yesterday because of this.',
-                },
-            ],
-        };
+        refetchIssue();
+    }, [refetchIssue]);
 
-        setIssue(mockIssue);
-        setComments(mockIssue.comments);
-    }, [issueId]);
+    const [newComment, setNewComment] = useState<string>('');
+    const [comments, setComments] = useState<IComment[]>([]);
 
     const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewComment(e.target.value);

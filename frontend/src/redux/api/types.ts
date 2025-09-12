@@ -53,6 +53,8 @@ export interface IIssue {
     priority: string;
     status: string;
     dateSubmitted: string;
+    upvotes: number;
+    upvoteCount: number;
 }
 
 export interface IComment {

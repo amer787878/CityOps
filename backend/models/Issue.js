@@ -8,7 +8,7 @@ const issueSchema = new mongoose.Schema({
   priority: { type: String, enum: ['Critical', 'Moderate', 'Low'], default: 'Moderate' },
   status: { type: String, enum: ['Pending', 'In Progress', 'Resolved'], default: 'Pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  upvotes: { type: Number, default: 0 },
+  upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 }, { timestamps: true });
 

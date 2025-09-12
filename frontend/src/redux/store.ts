@@ -5,6 +5,7 @@ import { getMeAPI } from './api/getMeAPI';
 import userReducer from './api/userSlice';
 import { userAPI } from './api/userAPI';
 import { teamAPI } from './api/teamAPI';
+import { issueAPI } from './api/issueAPI';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     [getMeAPI.reducerPath]: getMeAPI.reducer,
     [userAPI.reducerPath]: userAPI.reducer,
     [teamAPI.reducerPath]: teamAPI.reducer,
+    [issueAPI.reducerPath]: issueAPI.reducer,
     userState: userReducer
 
   },
@@ -22,6 +24,7 @@ export const store = configureStore({
         getMeAPI.middleware,
         userAPI.middleware,
         teamAPI.middleware,
+        issueAPI.middleware,
     ]),
 });
 

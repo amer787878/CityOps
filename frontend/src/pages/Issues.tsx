@@ -1,187 +1,198 @@
-import { Col, DropdownItem, DropdownMenu, DropdownToggle, Row, UncontrolledDropdown } from "reactstrap";
-import DataTable from 'react-data-table-component';
-import { useState, useEffect } from 'react';
+import {
+    Col,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    Row,
+    UncontrolledDropdown,
+    Badge,
+} from "reactstrap";
+import DataTable, { TableColumn } from 'react-data-table-component';
+import { useState, useEffect, useCallback } from 'react';
 import { CheckSquare, ChevronDown, Eye, MoreVertical } from 'react-feather';
 import Select from 'react-select';
-import { Input } from 'reactstrap';
 import { useNavigate } from "react-router-dom";
-
-interface IIssue {
-    id: number;
-    description: string;
-    address: string;
-    priority: string;
-    status: string;
-    upvotes: number;
-}
+import { useGetIssuesQuery, useUpvoteIssueMutation } from "../redux/api/issueAPI";
+import FullScreenLoader from "../components/FullScreenLoader";
+import { IIssue } from "../redux/api/types";
+import { toast } from 'react-toastify';
+import GooglePlacesAutocomplete from 'react-google-autocomplete';
 
 const Issues: React.FC = () => {
     const navigate = useNavigate();
-    const [issues, setIssues] = useState<IIssue[]>([]);
-    const [filteredIssues, setFilteredIssues] = useState<IIssue[]>([]);
-    const [filters, setFilters] = useState({
-        category: '',
-        location: '',
-        priority: ''
-    });
+    const [filters, setFilters] = useState<{ category?: string; location?: string; priority?: string }>({});
 
-    const paginationRowsPerPageOptions = [15, 30, 50, 100];
+    const { data: issues, refetch, isLoading } = useGetIssuesQuery(filters);
+    const [upvoteIssue] = useUpvoteIssueMutation();
 
-    const columns = () => [
+    useEffect(() => {
+        refetch();
+    }, [refetch, filters]);
+
+    const handleFilterChange = useCallback(
+        (key: keyof typeof filters, value: string) => {
+            setFilters((prev) => ({ ...prev, [key]: value }));
+        },
+        []
+    );
+
+    const handleUpvote = useCallback(async (id: number) => {
+        console.log(`Upvoted issue with ID: ${id}`);
+        try {
+            await upvoteIssue(id).unwrap();
+            toast.success('Issue upvoted successfully!');
+            refetch();
+        } catch (error: any) {
+            toast.error(`${error.message || error.data.message}`);
+        }
+    }, []);
+
+    const renderBadge = (type: 'priority' | 'status', value: string) => {
+        const badgeColors: Record<string, string> = {
+            High: 'info',
+            Medium: 'success',
+            Low: 'primary',
+            Active: 'primary',
+            Pending: 'warning',
+            Suspended: 'danger',
+        };
+        return (
+            <Badge color={badgeColors[value] || 'secondary'} className="px-3 py-2" pill>
+                {value}
+            </Badge>
+        );
+    };
+
+    const columns: TableColumn<IIssue>[] = [
         {
             name: 'Description',
-            selector: (row: { description: string }) => row.description,
+            selector: (row) =>
+                row.description.length > 30
+                    ? `${row.description.substring(0, 30)}...`
+                    : row.description,
             sortable: true,
             grow: 2,
         },
         {
             name: 'Address',
-            selector: (row: { address: string }) => row.address,
+            selector: (row) => row.address,
             sortable: true,
         },
         {
             name: 'Priority',
-            selector: (row: { priority: string }) => row.priority,
+            selector: (row) => row.priority,
             sortable: true,
         },
         {
             name: 'Status',
-            selector: (row: { status: string }) => row.status,
+            cell: (row) => renderBadge('status', row.status),
             sortable: true,
         },
         {
             name: 'Upvotes',
-            selector: (row: { upvotes: number }) => row.upvotes,
+            selector: (row) => row.upvoteCount,
             sortable: true,
         },
         {
             name: 'Actions',
-            cell: (row: IIssue) => (
-                <div>
-                    <UncontrolledDropdown>
-                        <DropdownToggle tag="div" className="btn btn-sm">
-                            <MoreVertical size={14} className="cursor-pointer action-btn" />
-                        </DropdownToggle>
-                        <DropdownMenu end container="body">
-                            <DropdownItem className="w-100" onClick={() => handleUpvote(row.id)}>
-                                <CheckSquare size={14} className="mx-1" />
-                                <span className="align-middle mx-2">Upvote</span>
-                            </DropdownItem>
-                            <DropdownItem className="w-100" onClick={() => navigate(`/citizen/issue-detail/${row.id}`)}>
-                                <Eye size={14} className="mx-1" />
-                                <span className="align-middle mx-2">View Details</span>
-                            </DropdownItem>
-                        </DropdownMenu>
-                    </UncontrolledDropdown>
-                </div>
+            cell: (row) => (
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="div" className="btn btn-sm">
+                        <MoreVertical size={14} className="cursor-pointer action-btn" />
+                    </DropdownToggle>
+                    <DropdownMenu end container="body">
+                        <DropdownItem className="w-100" onClick={() => handleUpvote(row._id)}>
+                            <CheckSquare size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Upvote</span>
+                        </DropdownItem>
+                        <DropdownItem
+                            className="w-100"
+                            onClick={() => navigate(`/citizen/issue-detail/${row._id}`)}
+                        >
+                            <Eye size={14} className="mx-1" />
+                            <span className="align-middle mx-2">View Details</span>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
             ),
         },
     ];
 
-    useEffect(() => {
-        // Mock data or fetch from API
-        const mockData = [
-            {
-                id: 1,
-                description: 'Pothole on Main Street',
-                address: '123 Main St, Cityville',
-                priority: 'High',
-                status: 'Open',
-                upvotes: 5,
-            },
-            {
-                id: 2,
-                description: 'Broken streetlight on Elm Ave',
-                address: '456 Elm Ave, Cityville',
-                priority: 'Medium',
-                status: 'In Progress',
-                upvotes: 3,
-            },
-        ];
-        setIssues(mockData);
-        setFilteredIssues(mockData);
-    }, []);
-
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
-    };
-
-    useEffect(() => {
-        let data = issues;
-
-        if (filters.priority) {
-            data = data.filter((issue) => issue.priority === filters.priority);
-        }
-
-        setFilteredIssues(data);
-    }, [filters, issues]);
-
-    const handleUpvote = (id: number) => {
-        setIssues((prev) =>
-            prev.map((issue) =>
-                issue.id === id ? { ...issue, upvotes: issue.upvotes + 1 } : issue
-            )
-        );
-    };
-
     const customStyles = {
         control: (provided: any) => ({
             ...provided,
-            minHeight: '44px', // Set the minimum height
+            minHeight: '44px',
         }),
         menu: (provided: any) => ({
             ...provided,
-            minHeight: '100px', // Minimum height for the dropdown menu
+            minHeight: '100px',
         }),
     };
 
     return (
-        <div className="main-board container">
-            <Row className="my-3">
-                <Col>
-                    <h3 className="mb-3">Community Issues</h3>
-                    <a href="/citizen/issues-submission" className="btn btn-primary">
-                        Submit an Issue
-                    </a>
-                </Col>
-            </Row>
-            <Row className="my-3">
-                <Col md={4}>
-                    <Select
-                        styles={customStyles}
-                        options={[
-                            { value: 'High', label: 'High' },
-                            { value: 'Medium', label: 'Medium' },
-                            { value: 'Low', label: 'Low' },
-                        ]}
-                        onChange={(e) => handleFilterChange('priority', e?.value || '')}
-                        placeholder="Filter by Priority"
-                    />
-                </Col>
-                <Col md={4}>
-                    <Input
-                        type="text"
-                        placeholder="Filter by Location"
-                        onChange={(e) => handleFilterChange('location', e.target.value)}
-                    />
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <DataTable
-                        title="Issues"
-                        data={filteredIssues}
-                        responsive
-                        className="react-dataTable"
-                        noHeader
-                        pagination
-                        paginationRowsPerPageOptions={paginationRowsPerPageOptions}
-                        columns={columns()}
-                        sortIcon={<ChevronDown />}
-                    />
-                </Col>
-            </Row>
-        </div>
+        <>
+            {isLoading ? (
+                <FullScreenLoader />
+            ) : (
+                <div className="main-board container">
+                    <Row className="my-3">
+                        <Col>
+                            <h3 className="mb-3">Community Issues</h3>
+                            <a href="/citizen/issues-submission" className="btn btn-primary">
+                                Submit an Issue
+                            </a>
+                        </Col>
+                    </Row>
+                    <Row className="my-3">
+                        <Col md={4}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'High', label: 'High' },
+                                    { value: 'Medium', label: 'Medium' },
+                                    { value: 'Low', label: 'Low' },
+                                ]}
+                                onChange={(e) => handleFilterChange('priority', e?.value || '')}
+                                placeholder="Filter by Priority"
+                            />
+                        </Col>
+                        <Col md={4}>
+                            {/* <Input
+                                type="text"
+                                placeholder="Filter by Location"
+                                onChange={(e) => handleFilterChange('location', e.target.value)}
+                            /> */}
+                            <GooglePlacesAutocomplete
+                                apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
+                                className={`form-control`}
+                                onPlaceSelected={(place) => {
+                                    handleFilterChange('location',  place.formatted_address || '');
+                                }}
+                                options={{
+                                    types: ['address'],
+                                    componentRestrictions: { country: 'IL' },
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <DataTable
+                                title="Issues"
+                                data={issues || []}
+                                responsive
+                                className="react-dataTable"
+                                noHeader
+                                pagination
+                                paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                                columns={columns}
+                                sortIcon={<ChevronDown />}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
+        </>
     );
 };
 

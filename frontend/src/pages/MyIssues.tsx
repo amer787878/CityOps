@@ -1,185 +1,156 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
     Col,
-    Row,
     DropdownItem,
     DropdownMenu,
     DropdownToggle,
+    Row,
     UncontrolledDropdown,
+    Input,
 } from "reactstrap";
-import DataTable from "react-data-table-component";
-import { ChevronDown, Eye, MoreVertical } from "react-feather";
-import Select from "react-select";
+import DataTable, { TableColumn } from 'react-data-table-component';
+import { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, Eye, MoreVertical } from 'react-feather';
+import Select from 'react-select';
 import { useNavigate } from "react-router-dom";
-import { IIssue } from '../redux/api/types';
+import { useGetMyIssuesQuery } from "../redux/api/issueAPI";
+import FullScreenLoader from "../components/FullScreenLoader";
+import { IIssue } from "../redux/api/types";
 
 const MyIssues: React.FC = () => {
     const navigate = useNavigate();
-    const [issues, setIssues] = useState<IIssue[]>([]);
-    const [filteredIssues, setFilteredIssues] = useState<IIssue[]>([]);
-    const [filters, setFilters] = useState({
-        priority: '',
-        status: '',
-    });
+    const [filters, setFilters] = useState<{ category?: string; location?: string; priority?: string }>({});
 
-    const paginationRowsPerPageOptions = [15, 30, 50, 100];
+    const { data: issues, refetch, isLoading } = useGetMyIssuesQuery(filters);
 
-    const columns = () => [
-        {
-            name: "Issue ID",
-            selector: (row: { _id: number }) => row._id,
-            sortable: true,
+    useEffect(() => {
+        refetch();
+    }, [refetch, filters]);
+
+    const handleFilterChange = useCallback(
+        (key: keyof typeof filters, value: string) => {
+            setFilters((prev) => ({ ...prev, [key]: value }));
         },
+        []
+    );
+
+    const handleUpvote = useCallback((id: number) => {
+        console.log(`Upvoted issue with ID: ${id}`);
+        // Add your logic for handling upvote here
+    }, []);
+
+    const columns: TableColumn<IIssue>[] = [
         {
-            name: "Description",
-            selector: (row: { description: string }) => row.description,
+            name: 'Description',
+            selector: (row) =>
+                row.description.length > 30
+                    ? `${row.description.substring(0, 30)}...`
+                    : row.description,
             sortable: true,
             grow: 2,
         },
         {
-            name: "Address",
-            selector: (row: { address: string }) => row.address,
+            name: 'Address',
+            selector: (row) => row.address,
             sortable: true,
         },
         {
-            name: "Priority",
-            selector: (row: { priority: string }) => row.priority,
+            name: 'Priority',
+            selector: (row) => row.priority,
             sortable: true,
         },
         {
-            name: "Status",
-            selector: (row: { status: string }) => row.status,
+            name: 'Status',
+            selector: (row) => row.status,
             sortable: true,
         },
         {
-            name: "Date Submitted",
-            selector: (row: { dateSubmitted: string }) => row.dateSubmitted,
+            name: 'Upvotes',
+            selector: (row) => row.upvoteCount,
             sortable: true,
         },
         {
-            name: "Actions",
-            cell: (row: IIssue) => (
-                <div>
-                    <UncontrolledDropdown>
-                        <DropdownToggle tag="div" className="btn btn-sm">
-                            <MoreVertical size={14} className="cursor-pointer action-btn" />
-                        </DropdownToggle>
-                        <DropdownMenu end container="body">
-                            <DropdownItem
-                                className="w-100"
-                                onClick={() => navigate(`/citizen/issue-detail/${row._id}`)}
-                            >
-                                <Eye size={14} className="mx-1" />
-                                <span className="align-middle mx-2">View Details</span>
-                            </DropdownItem>
-                        </DropdownMenu>
-                    </UncontrolledDropdown>
-                </div>
+            name: 'Actions',
+            cell: (row) => (
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="div" className="btn btn-sm">
+                        <MoreVertical size={14} className="cursor-pointer action-btn" />
+                    </DropdownToggle>
+                    <DropdownMenu end container="body">
+                        <DropdownItem
+                            className="w-100"
+                            onClick={() => navigate(`/citizen/issue-detail/${row._id}`)}
+                        >
+                            <Eye size={14} className="mx-1" />
+                            <span className="align-middle mx-2">View Details</span>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
             ),
         },
     ];
 
-    useEffect(() => {
-        // Mock data (Replace this with API call)
-        const mockData = [
-            {
-                _id: 1,
-                description: "Pothole on Main Street",
-                address: "123 Main St, Cityville",
-                priority: "Critical",
-                status: "Pending",
-                dateSubmitted: "2024-12-10",
-            },
-            {
-                _id: 2,
-                description: "Broken streetlight on Elm Ave",
-                address: "456 Elm Ave, Cityville",
-                priority: "Moderate",
-                status: "Resolved",
-                dateSubmitted: "2024-12-09",
-            },
-        ];
-        setIssues(mockData);
-        setFilteredIssues(mockData);
-    }, []);
-
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
-    };
-
-    useEffect(() => {
-        let data = issues;
-
-        if (filters.priority) {
-            data = data.filter((issue) => issue.priority === filters.priority);
-        }
-
-        if (filters.status) {
-            data = data.filter((issue) => issue.status === filters.status);
-        }
-
-        setFilteredIssues(data);
-    }, [filters, issues]);
-
     const customStyles = {
         control: (provided: any) => ({
             ...provided,
-            minHeight: "44px",
+            minHeight: '44px',
         }),
         menu: (provided: any) => ({
             ...provided,
-            minHeight: "100px",
+            minHeight: '100px',
         }),
     };
 
     return (
-        <div className="main-board container">
-            <Row className="my-3">
-                <Col>
-                    <h3 className="mb-3">My Issues</h3>
-                </Col>
-            </Row>
-            <Row className="my-3">
-                <Col md={4}>
-                    <Select
-                        styles={customStyles}
-                        options={[
-                            { value: "Critical", label: "Critical" },
-                            { value: "Moderate", label: "Moderate" },
-                            { value: "Low", label: "Low" },
-                        ]}
-                        onChange={(e) => handleFilterChange("priority", e?.value || "")}
-                        placeholder="Filter by Priority"
-                    />
-                </Col>
-                <Col md={4}>
-                    <Select
-                        styles={customStyles}
-                        options={[
-                            { value: "Pending", label: "Pending" },
-                            { value: "Resolved", label: "Resolved" },
-                        ]}
-                        onChange={(e) => handleFilterChange("status", e?.value || "")}
-                        placeholder="Filter by Status"
-                    />
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <DataTable
-                        title="Issues"
-                        data={filteredIssues}
-                        responsive
-                        className="react-dataTable"
-                        noHeader
-                        pagination
-                        paginationRowsPerPageOptions={paginationRowsPerPageOptions}
-                        columns={columns()}
-                        sortIcon={<ChevronDown />}
-                    />
-                </Col>
-            </Row>
-        </div>
+        <>
+            {isLoading ? (
+                <FullScreenLoader />
+            ) : (
+                <div className="main-board container">
+                    <Row className="my-3">
+                        <Col>
+                            <h3 className="mb-3">My Issues</h3>
+                        </Col>
+                    </Row>
+                    <Row className="my-3">
+                        <Col md={4}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'High', label: 'High' },
+                                    { value: 'Medium', label: 'Medium' },
+                                    { value: 'Low', label: 'Low' },
+                                ]}
+                                onChange={(e) => handleFilterChange('priority', e?.value || '')}
+                                placeholder="Filter by Priority"
+                            />
+                        </Col>
+                        <Col md={4}>
+                            <Input
+                                type="text"
+                                placeholder="Filter by Location"
+                                onChange={(e) => handleFilterChange('location', e.target.value)}
+                            />
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <DataTable
+                                title="Issues"
+                                data={issues || []}
+                                responsive
+                                className="react-dataTable"
+                                noHeader
+                                pagination
+                                paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                                columns={columns}
+                                sortIcon={<ChevronDown />}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
+        </>
     );
 };
 
