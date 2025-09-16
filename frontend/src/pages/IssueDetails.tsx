@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Col, Row, Input, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
 import { useParams } from 'react-router-dom';
-import { IComment, IIssueDetail } from '../redux/api/types';
+import { IComment } from '../redux/api/types';
 import { useGetIssueQuery } from '../redux/api/issueAPI';
 
 const IssueDetails: React.FC = () => {
@@ -56,10 +56,10 @@ const IssueDetails: React.FC = () => {
                             <p><strong>Status:</strong> {issue.status}</p>
                         </Col>
                         <Col md={6}>
-                            {issue.photo && (
+                            {issue.photoUrl && (
                                 <div>
                                     <p><strong>Photo:</strong></p>
-                                    <img src={issue.photo} alt="Issue" className="img-fluid mb-3" />
+                                    <img src={issue.photoUrl} alt="Issue" className="img-fluid mb-3" />
                                 </div>
                             )}
                             {issue.audioTranscription && (

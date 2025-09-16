@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import defaultFetchBase from './defaultFetchBase';
-import { IIssue } from './types';
+import { IIssue, ITeamIssue } from './types';
 
 export const issueAPI = createApi({
     reducerPath: 'issueAPI',
@@ -55,7 +55,7 @@ export const issueAPI = createApi({
             }
         ),
 
-        getIssue: builder.query<any, string>({
+        getIssue: builder.query<any, any>({
             query(id) {
                 return {
                     url: `/issues/getOneIssue/${id}`,
@@ -78,7 +78,23 @@ export const issueAPI = createApi({
                         { type: 'Issues', id: 'LIST' },
                     ]
                     : [{ type: 'Issues', id: 'LIST' }],
-            transformResponse: (response: IIssue[]) => response,
+            transformResponse: (response: ITeamIssue[]) => response,
+        }),
+
+        getTeamIssues: builder.query<ITeamIssue[], any>({
+            query: (params) => ({
+                url: '/issues/getTeamIssues',
+                credentials: 'include',
+                params,
+            }),
+            providesTags: (result) =>
+                result
+                    ? [
+                        ...result.map(({ _id }) => ({ type: 'Issues' as const, id: _id })),
+                        { type: 'Issues', id: 'LIST' },
+                    ]
+                    : [{ type: 'Issues', id: 'LIST' }],
+            transformResponse: (response: ITeamIssue[]) => response,
         }),
 
         getMyIssues: builder.query<IIssue[], any>({
@@ -118,5 +134,6 @@ export const {
     useGetIssuesQuery,
     useDeleteIssueMutation,
     useUpvoteIssueMutation,
-    useGetMyIssuesQuery
+    useGetMyIssuesQuery,
+    useGetTeamIssuesQuery
 } = issueAPI;

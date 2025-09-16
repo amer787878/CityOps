@@ -10,7 +10,7 @@ import {
 } from "reactstrap";
 import DataTable, { TableColumn } from 'react-data-table-component';
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Eye, MoreVertical } from 'react-feather';
+import { ChevronDown, Edit, Eye, MoreVertical } from 'react-feather';
 import Select from 'react-select';
 import { useNavigate } from "react-router-dom";
 import { useGetMyIssuesQuery } from "../redux/api/issueAPI";
@@ -77,6 +77,10 @@ const MyIssues: React.FC = () => {
                         <MoreVertical size={14} className="cursor-pointer action-btn" />
                     </DropdownToggle>
                     <DropdownMenu end container="body">
+                        <DropdownItem className="w-100" onClick={() => navigate(`/citizen/issues-update/${row._id}`)}>
+                            <Edit size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Update</span>
+                        </DropdownItem>
                         <DropdownItem
                             className="w-100"
                             onClick={() => navigate(`/citizen/issue-detail/${row._id}`)}

@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { query, body, validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const multer = require("multer");
 const mongoose = require('mongoose');
 const Issue = require('../models/Issue');
@@ -9,7 +9,7 @@ const verifyToken = require('../utils/verifyToken');
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/uploads/');
+        cb(null, 'public/uploads/issues/');
     },
     filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`);
@@ -235,7 +235,7 @@ router.get(
 
             const filterParams = {
                 $and: [
-                    { createdBy: req.user._id }, // Only fetch issues created by the logged-in user
+                    { createdBy: new mongoose.Types.ObjectId(req.user._id) },
                     statusFilter,
                     priorityFilter,
                     categoryFilter,
@@ -376,6 +376,144 @@ router.post(
 
 /**
  * @swagger
+ * /api/issues/update/{id}:
+ *   put:
+ *     summary: Update an existing issue
+ *     description: Allows a citizen to update the details of an existing issue by providing updated data.
+ *     tags:
+ *       - Issues
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the issue to update
+ *         schema:
+ *           type: string
+ *       - in: formData
+ *         name: description
+ *         required: false
+ *         description: Updated description of the issue
+ *         schema:
+ *           type: string
+ *       - in: formData
+ *         name: address
+ *         required: false
+ *         description: Updated address of the issue
+ *         schema:
+ *           type: string
+ *       - in: formData
+ *         name: photo
+ *         required: false
+ *         description: Updated photo file
+ *         schema:
+ *           type: file
+ *       - in: formData
+ *         name: audio
+ *         required: false
+ *         description: Updated audio file
+ *         schema:
+ *           type: file
+ *     responses:
+ *       200:
+ *         description: Issue updated successfully
+ *       400:
+ *         description: Bad request, invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                       param:
+ *                         type: string
+ *       404:
+ *         description: Issue not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put(
+    '/update/:id',
+    upload.fields([
+        { name: 'photo', maxCount: 1 },
+        { name: 'audio', maxCount: 1 },
+    ]),
+    [
+        body('description')
+            .optional()
+            .isString()
+            .withMessage('Description must be a string.')
+            .isLength({ max: 500 })
+            .withMessage('Description must be less than 500 characters.'),
+        body('address')
+            .optional()
+            .notEmpty()
+            .withMessage('Address cannot be empty if provided.'),
+    ],
+    verifyToken(['Citizen']),
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
+            const issueId = req.params.id;
+            const { description, address } = req.body;
+
+            const updateFields = {};
+            if (description) updateFields.description = description;
+            if (address) updateFields.address = address;
+
+            // File handling for optional updates
+            if (req.files && req.files.photo) {
+                updateFields.photoUrl =
+                    process.env.SERVER_URL +
+                    '/' +
+                    req.files.photo[0].path.replace(/\\/g, '/').replace('public/', '');
+            }
+            if (req.files && req.files.audio) {
+                updateFields.audioUrl =
+                    process.env.SERVER_URL +
+                    '/' +
+                    req.files.audio[0].path.replace(/\\/g, '/').replace('public/', '');
+            }
+
+            // Validate that at least one field is being updated
+            if (Object.keys(updateFields).length === 0) {
+                return res.status(400).json({
+                    error: 'At least one field (description, address, photo, or audio) must be provided for the update.',
+                });
+            }
+
+            // Find and update the issue
+            const updatedIssue = await Issue.findByIdAndUpdate(issueId, updateFields, {
+                new: true,
+            });
+
+            if (!updatedIssue) {
+                return res.status(404).json({ error: 'Issue not found.' });
+            }
+
+            res.status(200).json({
+                message: 'Issue updated successfully.',
+                issue: updatedIssue,
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'An error occurred while updating the issue.' });
+        }
+    }
+);
+
+
+/**
+ * @swagger
  * /api/issues/getOneIssue/{id}:
  *   get:
  *     summary: Retrieve a single issue by its ID
@@ -449,7 +587,10 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
         return res.status(400).send('Malformed issue id');
     }
 
-    const issue = await Issue.findById(req.params.id).select('-__v');
+    const issue = await Issue.findById(req.params.id).populate({
+        path: 'createdBy',
+        select: 'fullname email role' // Include specific fields from the User schema
+    }).select('-__v');
     if (!issue) {
         return res.status(400).send('issue not found');
     }
@@ -515,5 +656,32 @@ router.put('/upvote/:id', verifyToken(['Admin', 'Authority', 'Citizen']), async 
         return res.status(500).send({ message: 'Server error occurred while upvoting the issue', error: error.message });
     }
 });
+
+router.get(
+    '/getTeamIssues',
+    async (req, res) => {
+        try {
+            // Fetch issues, projecting upvote count
+            const issues = await Issue.aggregate([
+                {
+                    $addFields: {
+                        upvoteCount: { $size: { $ifNull: ['$upvotes', []] } }
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                {
+                    $project: {
+                        __v: 0 // Exclude the version key
+                    }
+                }
+            ]);
+
+            return res.status(200).json(issues);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'An error occurred while fetching issues.' });
+        }
+    }
+);
 
 module.exports = router;

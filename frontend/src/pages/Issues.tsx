@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
     Col,
     DropdownItem,
@@ -157,11 +158,6 @@ const Issues: React.FC = () => {
                             />
                         </Col>
                         <Col md={4}>
-                            {/* <Input
-                                type="text"
-                                placeholder="Filter by Location"
-                                onChange={(e) => handleFilterChange('location', e.target.value)}
-                            /> */}
                             <GooglePlacesAutocomplete
                                 apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
                                 className={`form-control`}

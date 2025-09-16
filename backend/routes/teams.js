@@ -160,51 +160,53 @@ router.get('/', verifyToken(['Authority']), async (req, res) => {
  *                   example: "Failed to create the team. Database error message."
  */
 router.post('/create', verifyToken(['Authority']), upload.single("image"), async (req, res) => {
-    if (!req.body.name || !req.body.members || !req.file) {
-        return res.status(400).send({
+    const { name, members, category, availability } = req.body;
+
+    if (!name || !members || !req.file) {
+        return res.status(400).json({
             status: 'error',
             message: 'Missing required fields. Ensure "name", "members", and "image" are provided.',
             reasonPhrase: 'InvalidRequestBodyError'
         });
     }
 
-    const { name, members } = req.body;
-
-    // Ensure members is an array
+    // Parse members to ensure it's an array
     let membersArray;
     try {
-        membersArray = JSON.parse(members); // Parse members if sent as a JSON string
+        membersArray = Array.isArray(members) ? members : [members];
         if (!Array.isArray(membersArray)) {
-            throw new Error("Members must be an array.");
+            throw new Error('Invalid format for "members".');
         }
     } catch (err) {
-        return res.status(400).send({
+        return res.status(400).json({
             status: 'error',
-            message: 'Invalid format for "members". It should be an array of member IDs.',
+            message: 'Invalid format for "members". It should be an array or a single member ID.',
             reasonPhrase: 'InvalidMembersFormatError'
         });
     }
 
     const teamData = {
         name,
-        members: membersArray, // Store member IDs
-        image: process.env.SERVER_URL + '/' + req.file.path.replace(/\\/g, '/').replace('public/', ''),
+        members: membersArray,
+        category,
+        availability,
+        image: `${process.env.SERVER_URL}/${req.file.path.replace(/\\/g, '/').replace('public/', '')}`,
     };
 
     try {
-        // Save the team to the database
         await Team.create(teamData);
-        return res.status(200).send({ 
-            status: "success", 
-            message: "The team data was created successfully!" 
+        return res.status(200).json({
+            status: "success",
+            message: "The team data was created successfully!"
         });
     } catch (error) {
-        return res.status(500).send({ 
-            status: "error", 
-            message: "Failed to create the team. " + error.message 
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to create the team. " + error.message,
         });
     }
 });
+
 
 /**
  * @swagger
@@ -306,6 +308,8 @@ router.post('/create', verifyToken(['Authority']), upload.single("image"), async
 router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), async (req, res) => {
     const { id } = req.params;
 
+    console.log(req.body)
+
     if (!id) {
         return res.status(400).send({
             status: 'error',
@@ -327,14 +331,14 @@ router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), as
     let membersArray = undefined;
     if (req.body.members) {
         try {
-            membersArray = JSON.parse(req.body.members); // Parse members if sent as a JSON string
+            membersArray = Array.isArray(req.body.members) ? req.body.members : [req.body.members];
             if (!Array.isArray(membersArray)) {
-                throw new Error("Members must be an array.");
+                throw new Error('Invalid format for "members".');
             }
         } catch (err) {
-            return res.status(400).send({
+            return res.status(400).json({
                 status: 'error',
-                message: 'Invalid format for "members". It should be an array of member IDs.',
+                message: 'Invalid format for "members". It should be an array or a single member ID.',
                 reasonPhrase: 'InvalidMembersFormatError'
             });
         }
@@ -343,6 +347,8 @@ router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), as
     const updatedData = {};
     if (req.body.name) updatedData.name = req.body.name;
     if (membersArray) updatedData.members = membersArray;
+    if (req.body.category) updatedData.category = req.body.category;
+    if (req.body.availability) updatedData.availability = req.body.availability;
     if (req.file) {
         updatedData.image = process.env.SERVER_URL + '/' + req.file.path.replace(/\\/g, '/').replace('public/', '');
     }
@@ -434,7 +440,10 @@ router.get('/getOneTeam/:id', verifyToken(['Authority']), async (req, res) => {
         return res.status(400).send('Malformed team id');
     }
 
-    const team = await Team.findById(req.params.id).select('-__v');
+    const team = await Team.findById(req.params.id).populate({
+        path: 'members',
+        select: 'fullname email role' // Include specific fields from the User schema
+    }).select('-__v');
     if (!team) {
         return res.status(400).send('team not found');
     }

@@ -52,7 +52,7 @@ const Teams: React.FC = () => {
                     src={image}
                     alt="Team"
                     className="img-fluid"
-                    style={{ maxWidth: "50px", maxHeight: "50px" }}
+                    style={{ maxWidth: "50px", maxHeight: "50px", borderRadius: '25px' }}
                 />
             );
         }
@@ -82,6 +82,18 @@ const Teams: React.FC = () => {
         }
     };
 
+    const renderBadge = (type: 'availability', value: string) => {
+        const badgeColors: Record<string, string> = {
+            Available: 'success',
+            Busy: 'primary',
+        };
+        return (
+            <Badge color={badgeColors[value] || 'secondary'} className="p-2" pill>
+                {value}
+            </Badge>
+        );
+    };
+
     const columns: TableColumn<ITeam>[] = [
         {
             name: "",
@@ -89,15 +101,31 @@ const Teams: React.FC = () => {
             cell: (row) => renderImage(row.image),
         },
         {
+            name: "Team ID",
+            width: "100px",
+            selector: (row) => row.teamNumber,
+            sortable: true,
+        },
+        {
             name: "Team Name",
             selector: (row) => row.name,
+            sortable: true,
+        },
+        {
+            name: "Expertise/Category",
+            selector: (row) => row.category,
+            sortable: true,
+        },
+        {
+            name: "Availability",
+            cell: (row) => renderBadge('availability', row.availability),
             sortable: true,
         },
         {
             name: "Team Members",
             width: "200px",
             cell: (row) => (
-                <Badge color="success" className="p-2">
+                <Badge color="primary" className="p-2">
                     {row.members?.length || 0}
                 </Badge>
             ),

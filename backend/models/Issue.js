@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const issueSchema = new mongoose.Schema({
   description: { type: String, required: true },
@@ -11,5 +12,8 @@ const issueSchema = new mongoose.Schema({
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }]
 }, { timestamps: true });
+
+// Apply the auto-increment plugin to the `issueNumber` field
+issueSchema.plugin(AutoIncrement, { inc_field: 'issueNumber', start_seq: 1000 });
 
 module.exports = mongoose.model('Issue', issueSchema);
