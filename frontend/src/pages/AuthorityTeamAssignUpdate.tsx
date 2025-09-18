@@ -145,14 +145,12 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                         </p>
                         <Row>
                             <Col md={6}>
-                                {/* Display Photo */}
                                 {issue?.photoUrl && (
                                     <div className="mb-3">
                                         <h5><strong>Photo:</strong></h5>
                                         <div>
                                             <img
                                                 src={issue.photoUrl}
-                                                alt="Issue Photo"
                                                 className="img-fluid rounded"
                                                 style={{ maxWidth: "300px", maxHeight: "200px" }}
                                             />
@@ -161,7 +159,6 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                                 )}
                             </Col>
                             <Col md={6}>
-                                {/* Display Audio */}
                                 {issue?.audioUrl && (
                                     <div className="mb-3">
                                         <h5><strong>Audio:</strong></h5>
@@ -185,7 +182,6 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                         />
                     </div>
 
-                    {/* DataTable */}
                     <DataTable
                         columns={columns}
                         data={filteredTeams}
@@ -195,7 +191,6 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                         noDataComponent={<div>No teams found</div>}
                     />
 
-                    {/* Submit Button */}
                     <Form onSubmit={handleSubmit(onSubmit)}>
                         <div className="text-end mt-3">
                             <Button type="submit" color="success">

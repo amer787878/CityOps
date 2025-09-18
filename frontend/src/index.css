@@ -403,15 +403,26 @@ a {
   color: #9ba4ae;
 }
 
-.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: inherit;
   font-weight: 500;
   line-height: 1.2;
-  color: #282c34!important;
+  color: #282c34 !important;
 }
 
 .form-control {
-  padding: .6rem .75rem!important;
+  padding: .6rem .75rem !important;
 }
 
 .auth-registration .hero-image {
@@ -438,4 +449,51 @@ a {
   .issue-card {
     padding: 5px;
   }
+}
+
+.social-feed-box {
+  border: 1px solid #e7eaec;
+  background: #fff;
+  margin-bottom: 5px;
+}
+
+.issue-card .social-feed-box {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.issue-card .social-feed-box:last-of-type {
+  margin-bottom: 0;
+  border-bottom: 1px solid #e7eaec !important;
+}
+
+.social-avatar {
+  padding: 15px 15px 0 15px;
+}
+
+.float-left {
+  float: left !important;
+}
+
+.media-body {
+  overflow: hidden;
+}
+
+a {
+  cursor: pointer;
+}
+
+.social-avatar img {
+  height: 40px;
+  width: 40px;
+  margin-right: 10px;
+}
+
+.social-avatar .media-body a {
+  font-size: 14px;
+  display: block;
+}
+
+.social-body {
+  padding: 15px;
 }

@@ -110,7 +110,8 @@ export interface ITeamIssue {
 }
 
 export interface IComment {
-    id: number;
+    _id: string;
+    issueId: string;
     author: string;
     timestamp: string;
     content: string;
@@ -182,6 +183,14 @@ export interface ProfileRequest {
     firstname: string;
     lastname: string;
     email: string;
+}
+
+export interface INotification {
+    _id: string;
+    message: string;
+    user: string;
+    issue: string;
+    read: boolean;
 }
 
 

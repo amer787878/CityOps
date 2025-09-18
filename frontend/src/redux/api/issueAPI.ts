@@ -8,16 +8,16 @@ export const issueAPI = createApi({
     tagTypes: ['Issues'],
     endpoints: (builder) => ({
         createIssue: builder.mutation<any, any>({
-            query(team) {
+            query(issue) {
                 return {
                     url: '/issues/create',
                     method: 'POST',
                     credentials: 'include',
-                    body: team,
+                    body: issue,
                 };
             },
             invalidatesTags: [{ type: 'Issues', id: 'LIST' }],
-            transformResponse: (result: { data: { team: any } }) =>
+            transformResponse: (result: { data: { issue: any } }) =>
                 result
         }),
         updateIssue: builder.mutation<any, any>({
@@ -38,6 +38,20 @@ export const issueAPI = createApi({
                     : [{ type: 'Issues', id: 'LIST' }],
             transformResponse: (response: any) =>
                 response,
+        }),
+
+        postIssue: builder.mutation<any, any>({
+            query(comment) {
+                return {
+                    url: `/comments/postComment`,
+                    method: 'POST',
+                    credentials: 'include',
+                    body: comment,
+                };
+            },
+            invalidatesTags: [{ type: 'Issues', id: 'LIST' }],
+            transformResponse: (result: { data: { issue: any } }) =>
+                result
         }),
 
         upvoteIssue: builder.mutation<any, any>(
@@ -135,5 +149,6 @@ export const {
     useDeleteIssueMutation,
     useUpvoteIssueMutation,
     useGetMyIssuesQuery,
-    useGetTeamIssuesQuery
+    useGetTeamIssuesQuery,
+    usePostIssueMutation,
 } = issueAPI;

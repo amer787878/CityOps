@@ -583,20 +583,132 @@ router.put(
  *         description: Internal server error
  */
 router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), async (req, res) => {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-        return res.status(400).send('Malformed issue id');
-    }
+    try {
+        const { id } = req.params;
 
-    const issue = await Issue.findById(req.params.id).populate({
-        path: 'createdBy',
-        select: 'fullname email role' // Include specific fields from the User schema
-    }).select('-__v');
-    if (!issue) {
-        return res.status(400).send('issue not found');
-    }
+        // Validate the issue ID
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).send('Malformed issue ID');
+        }
 
-    return res.send(issue);
+        // Use aggregation to fetch the issue with comments and their creators
+        const issueData = await Issue.aggregate([
+            {
+                $match: { _id: new mongoose.Types.ObjectId(id) }, // Match the issue by ID
+            },
+            {
+                $lookup: {
+                    from: 'users', // Name of the User collection
+                    let: { creatorId: '$createdBy' }, // Pass the createdBy field
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ['$_id', '$$creatorId'] }, // Match the User ID
+                            },
+                        },
+                        {
+                            $project: { // Select only required fields
+                                _id: 1,
+                                fullname: 1,
+                                email: 1,
+                            },
+                        },
+                    ],
+                    as: 'createdByDetails', // Output array field
+                },
+            },
+            {
+                $unwind: {
+                    path: '$createdByDetails',
+                    preserveNullAndEmptyArrays: true, // Handle cases where creator details might be missing
+                },
+            },
+            {
+                $lookup: {
+                    from: 'comments', // Name of the Comment collection
+                    localField: '_id', // Match the Issue ID with the `issue` field in the Comment collection
+                    foreignField: 'issue',
+                    as: 'commentDetails',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users', // Name of the User collection
+                    let: { commentCreatorIds: '$commentDetails.createdBy' }, // Pass the createdBy field
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $in: ['$_id', '$$commentCreatorIds'] }, // Match User IDs in the list
+                            },
+                        },
+                        {
+                            $project: { // Select only required fields
+                                _id: 1,
+                                fullname: 1,
+                                email: 1,
+                            },
+                        },
+                    ],
+                    as: 'commentCreators', // Output array field
+                },
+            },
+            {
+                $addFields: {
+                    comments: {
+                        $map: {
+                            input: '$commentDetails',
+                            as: 'comment',
+                            in: {
+                                _id: '$$comment._id',
+                                content: '$$comment.content',
+                                createdAt: '$$comment.createdAt',
+                                createdBy: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: '$commentCreators',
+                                                as: 'creator',
+                                                cond: { $eq: ['$$creator._id', '$$comment.createdBy'] },
+                                            },
+                                        },
+                                        0,
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    description: 1,
+                    photoUrl: 1,
+                    audioUrl: 1,
+                    address: 1,
+                    priority: 1,
+                    status: 1,
+                    createdBy: '$createdByDetails', // Include the formatted `createdBy` details
+                    comments: 1, // Include the updated `comments` array
+                    createdAt: 1,
+                    updatedAt: 1,
+                },
+            },
+        ]);
+
+        // If no issue is found, return an error
+        if (!issueData || issueData.length === 0) {
+            return res.status(404).send('Issue not found');
+        }
+
+        // Return the first issue in the result (since IDs are unique)
+        return res.status(200).json(issueData[0]);
+    } catch (error) {
+        console.error('Error fetching issue:', error);
+        return res.status(500).send('Internal Server Error');
+    }
 });
+
 
 /**
  * @swagger

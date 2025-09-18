@@ -1,42 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { Col, Row, Input, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
+import React, { useEffect } from 'react';
+import { Col, Row, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
 import { useParams } from 'react-router-dom';
 import { IComment } from '../redux/api/types';
-import { useGetIssueQuery } from '../redux/api/issueAPI';
+import { useGetIssueQuery, usePostIssueMutation } from '../redux/api/issueAPI';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import classnames from 'classnames';
+import FullScreenLoader from '../components/FullScreenLoader';
+import userImg from '../assets/images/user.png';
+import { getDateFormat } from '../utils/Utils';
 
 const IssueDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { data: issue, refetch: refetchIssue } = useGetIssueQuery(id ?? '', {
+    const { data: issue, refetch: refetchIssue, isLoading } = useGetIssueQuery(id ?? '', {
         skip: !id,
     });
+    const [postIssue] = usePostIssueMutation();
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<IComment>();
 
     useEffect(() => {
         refetchIssue();
     }, [refetchIssue]);
 
-    const [newComment, setNewComment] = useState<string>('');
-    const [comments, setComments] = useState<IComment[]>([]);
+    const onSubmit: SubmitHandler<IComment> = async (formData) => {
+        formData.issueId = id ?? "";
+        await postIssue(formData);
+        refetchIssue();
+    }
 
-    const handleCommentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setNewComment(e.target.value);
-    };
-
-    const handleCommentSubmit = () => {
-        if (!newComment.trim()) return;
-
-        const newCommentObj: IComment = {
-            id: comments.length + 1,
-            author: 'Current User', // Replace with actual user
-            timestamp: new Date().toLocaleString(),
-            content: newComment.trim(),
-        };
-
-        setComments((prevComments) => [...prevComments, newCommentObj]);
-        setNewComment('');
-    };
-
-    if (!issue) {
-        return <div>Loading issue details...</div>;
+    if (isLoading) {
+        return (<FullScreenLoader />);
     }
 
     return (
@@ -73,29 +70,59 @@ const IssueDetails: React.FC = () => {
                     <Row className="my-3">
                         <Col>
                             <h4>Comments</h4>
-                            <div className="comments-list">
-                                {comments.map((comment) => (
-                                    <div key={comment.id} className="mb-3">
-                                        <strong>{comment.author}</strong>
-                                        <span className="text-muted"> ({comment.timestamp})</span>
-                                        <p>{comment.content}</p>
-                                        <hr />
+                            <>
+                                {issue && issue.comments.map((comment: any, index: number) => (
+                                    <div className="social-feed-box" key={comment._id} style={{
+                                        marginBottom: index === issue.comments.length - 1 ? '0' : 'inherit',
+                                        borderBottom: index === issue.comments.length - 1 ? '1px solid #e7eaec' : 'none',
+                                    }}>
+                                        <div className="social-avatar">
+                                            <small className="float-left">
+                                                <img alt="image" src={userImg} />
+                                            </small>
+                                            <div className="media-body">
+                                                <div>
+                                                    {comment.createdBy?.fullname}
+                                                </div>
+                                                <small className="text-muted">{getDateFormat(comment.createdAt)}</small>
+                                            </div>
+                                        </div>
+                                        <div className="social-body">
+                                            <p>
+                                                {comment.content}
+                                            </p>
+                                        </div>
                                     </div>
                                 ))}
+                            </>
+                            <div className='mt-3'>
+                                <Form onSubmit={handleSubmit(onSubmit)}>
+                                    <FormGroup>
+                                        <textarea
+                                            id="content"
+                                            className={`form-control ${classnames({ 'is-invalid': errors.content })}`}
+                                            {...register('content', {
+                                                required: 'Comment is required.',
+                                                minLength: {
+                                                    value: 10,
+                                                    message: 'Comment must be at least 10 characters long.'
+                                                },
+                                                maxLength: {
+                                                    value: 500,
+                                                    message: 'Comment must be less than 500 characters long.'
+                                                }
+                                            })}
+                                        ></textarea>
+                                        {errors.content && (
+                                            <small className="text-danger">{errors.content.message}</small>
+                                        )}
+                                    </FormGroup>
+                                    <Button color="primary" type="submit">
+                                        Submit Comment
+                                    </Button>
+                                </Form>
                             </div>
-                            <Form onSubmit={(e) => e.preventDefault()}>
-                                <FormGroup>
-                                    <Input
-                                        type="textarea"
-                                        placeholder="Add a comment..."
-                                        value={newComment}
-                                        onChange={handleCommentChange}
-                                    />
-                                </FormGroup>
-                                <Button color="primary" onClick={handleCommentSubmit}>
-                                    Submit Comment
-                                </Button>
-                            </Form>
+
                         </Col>
                     </Row>
                 </CardBody>

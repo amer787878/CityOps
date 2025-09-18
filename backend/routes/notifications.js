@@ -74,24 +74,49 @@ const router = express.Router();
  */
 router.get('/', verifyToken(['Authority']), async (req, res) => {
     try {
-        const notifications = await Notification.find()
-            .select('-__v') // Exclude the `__v` field
+        const { type, startDate, endDate } = req.query;
+
+        // Build the query object
+        const query = {};
+        if (type) {
+            query.type = type; // Filter by notification type
+        }
+
+        if (startDate && endDate) {
+            query.createdAt = {
+                $gte: new Date(startDate), // Greater than or equal to startDate
+                $lte: new Date(endDate), // Less than or equal to endDate
+            };
+        } else if (startDate) {
+            query.createdAt = {
+                $gte: new Date(startDate),
+            };
+        } else if (endDate) {
+            query.createdAt = {
+                $lte: new Date(endDate),
+            };
+        }
+
+        // Fetch notifications with filters applied
+        const notifications = await Notification.find(query)
+            .select('-__v')
             .populate({
                 path: 'user',
-                select: 'fullname email role' // Include specific fields from the User schema
+                select: 'fullname email role', // Include specific fields from the User schema
             })
             .populate({
                 path: 'issue', // Populate the issue field if present
-                select: 'description status' // Adjust fields as necessary
+                select: 'issueNumber description status', // Adjust fields as necessary
             });
 
         return res.status(200).send(notifications);
     } catch (error) {
         return res.status(500).send({
             status: "error",
-            message: "Failed to retrieve notifications. " + error.message
+            message: "Failed to retrieve notifications. " + error.message,
         });
     }
 });
+
 
 module.exports = router;
