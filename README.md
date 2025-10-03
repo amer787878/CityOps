@@ -16,6 +16,8 @@ CityOps helps residents report city problems (potholes, broken lights, missed ga
 - Admin login + Team management for authority
 - Added Authority dashboard fully (backend + frontend)
 - Added community issues fully (backend+frontend)
+- Added citizen dashboard
+- Added comments on specific issue by other citizens.
 
 ## Roadmap (next steps)
 - Integrate AI classification using chatGPT to issue submission.
