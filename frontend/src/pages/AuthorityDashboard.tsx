@@ -1,34 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { Col, Row, Button, DropdownItem, DropdownMenu, DropdownToggle, UncontrolledDropdown, Card, CardBody } from 'reactstrap';
-import DataTable from 'react-data-table-component';
+import {
+    Col,
+    Row,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    UncontrolledDropdown,
+    Card,
+    CardBody,
+    Badge,
+} from 'reactstrap';
+import DataTable, { TableColumn } from 'react-data-table-component';
 import Select from 'react-select';
-import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Edit, Eye, Plus, Trash } from 'react-feather';
-
-interface IIssue {
-    id: number;
-    description: string;
-    address: string;
-    submittedBy: string;
-    priority: string;
-    status: string;
-    upvotes: number;
-}
+import { ChevronDown, Edit, Eye, MoreVertical, Plus, Trash } from 'react-feather';
+import { useGetIssuesQuery } from '../redux/api/issueAPI';
+import FullScreenLoader from '../components/FullScreenLoader';
+import { IIssue } from '../redux/api/types';
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/material_blue.css";
+import GooglePlacesAutocomplete from 'react-google-autocomplete';
 
 const AuthorityDashboard: React.FC = () => {
     const navigate = useNavigate();
-    const [issues, setIssues] = useState<IIssue[]>([]);
-    const [filteredIssues, setFilteredIssues] = useState<IIssue[]>([]);
+
+    const [dateRange, setDateRange] = useState<[Date, Date]>([
+        (() => {
+            const date = new Date();
+            date.setDate(date.getDate() - 15);
+            return new Date(date);
+        })(),
+        (() => {
+            const date = new Date();
+            date.setDate(date.getDate() + 15);
+            return new Date(date);
+        })()
+    ]);
+
+    const formatToYYYYMMDD = (date: Date) => date.toISOString().split('T')[0];
+
+    // Filters state
     const [filters, setFilters] = useState({
         priority: '',
         status: '',
         category: '',
-        dateRange: { startDate: null as Date | null, endDate: null as Date | null },
+        startDate: formatToYYYYMMDD(dateRange[0]),
+        endDate: formatToYYYYMMDD(dateRange[1]),
         location: '',
     });
 
+    // Query to fetch issues
+    const { data: issues = [], refetch, isLoading } = useGetIssuesQuery(filters);
+
+    // Statistics state
     const [stats, setStats] = useState({
         total: 0,
         pending: 0,
@@ -37,109 +62,102 @@ const AuthorityDashboard: React.FC = () => {
         critical: 0,
     });
 
-    const paginationRowsPerPageOptions = [10, 25, 50];
+    // Re-fetch issues when filters are updated
+    useEffect(() => {
+        refetch();
+        calculateStats(issues); // Calculate statistics based on the issues
+    }, [refetch, issues]);
 
-    const columns = [
+    const renderBadge = (type: 'priority' | 'status', value: string) => {
+        const badgeColors: Record<string, string> = {
+            Low: 'primary',
+            Moderate: 'info',
+            Critical: 'danger',
+            Active: 'primary',
+            Pending: 'warning',
+            Suspended: 'danger',
+        };
+        return (
+            <Badge color={badgeColors[value] || 'secondary'} className="px-3 py-2" pill>
+                {value}
+            </Badge>
+        );
+    };
+
+    // Define table columns
+    const columns: TableColumn<IIssue>[] = [
         {
             name: 'Issue ID',
-            selector: (row: { id: number }) => row.id,
+            selector: (row) => row.issueNumber,
             sortable: true,
             grow: 1,
         },
         {
             name: 'Description',
-            selector: (row: { description: string }) => row.description,
+            selector: (row) => row.description,
             sortable: true,
             grow: 2,
         },
         {
             name: 'Address',
-            selector: (row: { address: string }) => row.address,
-            sortable: true,
-        },
-        {
-            name: 'Submitted By',
-            selector: (row: { submittedBy: string }) => row.submittedBy,
+            selector: (row) => row.address,
             sortable: true,
         },
         {
             name: 'Priority',
-            selector: (row: { priority: string }) => row.priority,
+            cell: (row) => renderBadge('priority', row.priority),
+            sortable: true,
+        },
+        {
+            name: 'Category',
+            selector: (row) => row?.category,
             sortable: true,
         },
         {
             name: 'Status',
-            selector: (row: { status: string }) => row.status,
+            cell: (row) => renderBadge('status', row.status),
             sortable: true,
         },
         {
             name: 'Upvotes',
-            selector: (row: { upvotes: number }) => row.upvotes,
+            selector: (row) => row.upvotes,
             sortable: true,
         },
         {
             name: 'Actions',
             cell: (row: IIssue) => (
-                <div className="d-flex align-items-center">
-                    <Button color="primary" size="sm" onClick={() => navigate(`/authority/issues/${row.id}`)}>
-                        <Eye size={14} /> View
-                    </Button>
-                    <Button
-                        color="warning"
-                        size="sm"
-                        className="mx-1"
-                        onClick={() => handleAssignTeam(row.id)}
-                    >
-                        <Plus size={14} /> Assign Team
-                    </Button>
-                    <UncontrolledDropdown>
-                        <DropdownToggle className="btn btn-sm">
-                            <ChevronDown size={14} />
-                        </DropdownToggle>
-                        <DropdownMenu>
-                            <DropdownItem onClick={() => handleChangeStatus(row.id)}>
-                                <Edit size={14} /> Change Status
-                            </DropdownItem>
-                            <DropdownItem onClick={() => handleAddNotes(row.id)}>
-                                <Plus size={14} /> Add Notes
-                            </DropdownItem>
-                            <DropdownItem onClick={() => handleDeleteIssue(row.id)}>
-                                <Trash size={14} /> Delete
-                            </DropdownItem>
-                        </DropdownMenu>
-                    </UncontrolledDropdown>
-                </div>
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="div" className="btn btn-sm">
+                        <MoreVertical size={14} className="cursor-pointer action-btn" />
+                    </DropdownToggle>
+                    <DropdownMenu end container="body">
+                        <DropdownItem onClick={() => navigate(`/authority/issues/${row._id}`)}>
+                            <Eye size={14} className="mx-1" />
+                            <span className="align-middle mx-2">View</span>
+                        </DropdownItem>
+                        <DropdownItem onClick={() => handleAssignTeam(row._id)}>
+                            <Plus size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Assign Team</span>
+                        </DropdownItem>
+                        <DropdownItem onClick={() => handleChangeStatus(row._id)}>
+                            <Edit size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Change Status</span>
+                        </DropdownItem>
+                        <DropdownItem onClick={() => handleAddNotes(row._id)}>
+                            <Plus size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Add Notes</span>
+                        </DropdownItem>
+                        <DropdownItem onClick={() => handleDeleteIssue(row._id)}>
+                            <Trash size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Delete</span>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
             ),
         },
     ];
 
-    useEffect(() => {
-        // Mock data or fetch from API
-        const mockData = [
-            {
-                id: 1,
-                description: 'Pothole on Main Street',
-                address: '123 Main St, Cityville',
-                submittedBy: 'John Doe',
-                priority: 'Critical',
-                status: 'Pending',
-                upvotes: 10,
-            },
-            {
-                id: 2,
-                description: 'Broken streetlight',
-                address: '456 Elm St, Cityville',
-                submittedBy: 'Jane Smith',
-                priority: 'Moderate',
-                status: 'In Progress',
-                upvotes: 8,
-            },
-        ];
-        setIssues(mockData);
-        setFilteredIssues(mockData);
-        calculateStats(mockData);
-    }, []);
-
+    // Calculate statistics
     const calculateStats = (data: IIssue[]) => {
         const total = data.length;
         const pending = data.filter((issue) => issue.status === 'Pending').length;
@@ -149,157 +167,145 @@ const AuthorityDashboard: React.FC = () => {
         setStats({ total, pending, inProgress, resolved, critical });
     };
 
-    const handleFilterChange = (key: string, value: string | Date | null) => {
+    // Handle filter changes
+    const handleFilterChange = (key: string, value: any) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    useEffect(() => {
-        let data = issues;
-
-        if (filters.priority) {
-            data = data.filter((issue) => issue.priority === filters.priority);
-        }
-        if (filters.status) {
-            data = data.filter((issue) => issue.status === filters.status);
-        }
-
-        setFilteredIssues(data);
-    }, [filters, issues]);
-
-    const handleAssignTeam = (id: number) => {
-        // Open modal to assign team
-    };
-
-    const handleChangeStatus = (id: number) => {
-        // Open modal or dropdown to change status
-    };
-
-    const handleAddNotes = (id: number) => {
-        // Open modal to add internal notes
-    };
-
-    const handleDeleteIssue = (id: number) => {
-        // API call to delete the issue
-    };
+    // Placeholder event handlers
+    const handleAssignTeam = (id: number) => alert(`Assign Team to Issue ID: ${id}`);
+    const handleChangeStatus = (id: number) => alert(`Change Status of Issue ID: ${id}`);
+    const handleAddNotes = (id: number) => alert(`Add Notes to Issue ID: ${id}`);
+    const handleDeleteIssue = (id: number) => alert(`Delete Issue ID: ${id}`);
 
     const customStyles = {
         control: (provided: any) => ({
             ...provided,
-            minHeight: '44px', // Set the minimum height
+            minHeight: '44px',
         }),
         menu: (provided: any) => ({
             ...provided,
-            minHeight: '100px', // Minimum height for the dropdown menu
+            minHeight: '100px',
         }),
     };
 
     return (
-        <div className="container main-board">
-            <Row className="my-3">
-                <Col>
-                    <h3>Authority Dashboard</h3>
-                </Col>
-            </Row>
-            <Row>
-                <Col md={3}>
-                    <Card className="bg-primary">
-                        <CardBody>
-                            <div className="text-white">
-                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Total Issues</h6>
-                                <h2 className="mb-4 text-white">1,587</h2>
-                            </div>
-                        </CardBody>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="bg-warning">
-                        <CardBody>
-                            <div className="text-white">
-                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Pending Issues</h6>
-                                <h2 className="mb-4 text-white">10</h2>
-                            </div>
-                        </CardBody>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="bg-success">
-                        <CardBody>
-                            <div className="text-white">
-                                <h6 className="text-uppercase mb-3 font-size-16 text-white">Resolved Issues</h6>
-                                <h2 className="mb-4 text-white">1100</h2>
-                            </div>
-                        </CardBody>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="bg-info">
-                        <CardBody>
-                            <div className="text-white">
-                                <h6 className="text-uppercase mb-3 font-size-16 text-white">InProgress Issues</h6>
-                                <h2 className="mb-4 text-white">1</h2>
-                            </div>
-                        </CardBody>
-                    </Card>
-                </Col>
-            </Row>
-            <Row className="my-3">
-                <Col md={3}>
-                    <Select
-                        styles={customStyles}
-                        options={[
-                            { value: 'Critical', label: 'Critical' },
-                            { value: 'Moderate', label: 'Moderate' },
-                            { value: 'Low', label: 'Low' },
-                        ]}
-                        onChange={(e) => handleFilterChange('priority', e?.value || '')}
-                        placeholder="Filter by Priority"
-                    />
-                </Col>
-                <Col md={3}>
-                    <Select
-                        styles={customStyles}
-                        options={[
-                            { value: 'Pending', label: 'Pending' },
-                            { value: 'In Progress', label: 'In Progress' },
-                            { value: 'Resolved', label: 'Resolved' },
-                        ]}
-                        onChange={(e) => handleFilterChange('status', e?.value || '')}
-                        placeholder="Filter by Status"
-                    />
-                </Col>
-                <Col md={3}>
-                    <DatePicker
-                        selected={filters.dateRange.startDate}
-                        onChange={(date) => handleFilterChange('startDate', date)}
-                        placeholderText="Start Date"
-                        className="form-control"
-                    />
-                </Col>
-                <Col md={3}>
-                    <DatePicker
-                        selected={filters.dateRange.endDate}
-                        onChange={(date) => handleFilterChange('endDate', date)}
-                        placeholderText="End Date"
-                        className="form-control"
-                    />
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <DataTable
-                        title="Reported Issues"
-                        data={filteredIssues}
-                        responsive
-                        className="react-dataTable"
-                        noHeader
-                        pagination
-                        paginationRowsPerPageOptions={paginationRowsPerPageOptions}
-                        columns={columns}
-                        sortIcon={<ChevronDown />}
-                    />
-                </Col>
-            </Row>
-        </div>
+        <>
+            {isLoading ? (
+                <FullScreenLoader />
+            ) : (
+                <div className="container main-board">
+                    <Row className="my-3">
+                        <Col>
+                            <h3>Authority Dashboard</h3>
+                        </Col>
+                    </Row>
+                    <Row>
+                        {[
+                            { label: 'Total Issues', value: stats.total, color: 'bg-primary' },
+                            { label: 'Pending Issues', value: stats.pending, color: 'bg-warning' },
+                            { label: 'Resolved Issues', value: stats.resolved, color: 'bg-success' },
+                            { label: 'In Progress Issues', value: stats.inProgress, color: 'bg-info' },
+                        ].map((stat, index) => (
+                            <Col md={3} key={index}>
+                                <Card className={stat.color}>
+                                    <CardBody>
+                                        <div className="text-white">
+                                            <h6 className="text-uppercase mb-3 font-size-16">
+                                                {stat.label}
+                                            </h6>
+                                            <h2 className="mb-4">{stat.value}</h2>
+                                        </div>
+                                    </CardBody>
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+                    <Row className="my-3">
+                        <Col md={2}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'Critical', label: 'Critical' },
+                                    { value: 'Moderate', label: 'Moderate' },
+                                    { value: 'Low', label: 'Low' },
+                                ]}
+                                onChange={(e) => handleFilterChange('priority', e?.value)}
+                                placeholder="Filter by Priority"
+                            />
+                        </Col>
+                        <Col md={2}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'Pending', label: 'Pending' },
+                                    { value: 'In Progress', label: 'In Progress' },
+                                    { value: 'Resolved', label: 'Resolved' },
+                                ]}
+                                onChange={(e) => handleFilterChange('status', e?.value)}
+                                placeholder="Filter by Status"
+                            />
+                        </Col>
+                        <Col md={2}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'Road Maintenance', label: 'Road Maintenance' },
+                                    { value: 'Waste Disposal', label: 'Waste Disposal' },
+                                    { value: 'Streetlight Repair', label: 'Streetlight Repair' },
+                                ]}
+                                onChange={(e) => handleFilterChange('category', e?.value)}
+                                placeholder="Filter by Category"
+                            />
+                        </Col>
+                        <Col md={3}>
+                            <Flatpickr
+                                options={{
+                                    mode: "range",
+                                    dateFormat: "Y-m-d",
+                                    defaultDate: dateRange,
+                                }}
+                                value={dateRange}
+                                onChange={(selectedDates: Date[]) => {
+                                    if (selectedDates.length === 2) {
+                                        setDateRange([selectedDates[0], selectedDates[1]]);
+                                    }
+                                }}
+                                className="form-control"
+                            />
+                        </Col>
+                        <Col md={3}>
+                            <GooglePlacesAutocomplete
+                                apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
+                                className={`form-control`}
+                                onPlaceSelected={(place) => {
+                                    handleFilterChange('location',  place.formatted_address || '');
+                                }}
+                                options={{
+                                    types: ['address'],
+                                    componentRestrictions: { country: 'IL' },
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <DataTable
+                                title="Reported Issues"
+                                data={issues}
+                                responsive
+                                className="react-dataTable"
+                                noHeader
+                                pagination
+                                paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                                columns={columns}
+                                sortIcon={<ChevronDown />}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
+        </>
     );
 };
 

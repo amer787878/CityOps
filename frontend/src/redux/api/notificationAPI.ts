@@ -24,9 +24,25 @@ export const notificationAPI = createApi({
             transformResponse: (response: INotification[]) => response,
         }),
 
+        readMarkNotification: builder.mutation<any, any>(
+            {
+                query(id) {
+                    return {
+                        url: `/notifications/readMark/${id}`,
+                        method: 'PUT',
+                        credentials: 'include',
+                    };
+                },
+                invalidatesTags: [{ type: 'Notifications', id: 'LIST' }],
+                transformResponse: (response: any) =>
+                    response,
+            }
+        ),
+
     }),
 });
 
 export const {
     useGetNotificationsQuery,
+    useReadMarkNotificationMutation
 } = notificationAPI;

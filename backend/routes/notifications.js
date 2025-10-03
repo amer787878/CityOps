@@ -118,5 +118,71 @@ router.get('/', verifyToken(['Authority']), async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/notifications/readMark/{id}:
+ *   put:
+ *     summary: Mark a notification as read.
+ *     description: Updates a notification to mark it as read. Only accessible by users with the "Authority" role.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the notification to mark as read.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Notification successfully marked as read.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Notification successfully marked!
+ *       404:
+ *         description: Notification not found or already marked as read.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Notification not found or already marked as read!
+ *       500:
+ *         description: Server error occurred.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Server error occurred while marking the notification as read.
+ */
+
+router.put('/readMark/:id', verifyToken(['Authority']), async (req, res) => {
+    try {
+        const notification = await Notification.updateOne(
+            { _id: req.params.id },
+            { $set: { read: true } }
+        );
+
+        if (notification.nModified === 0) {
+            return res.status(404).send({ message: 'Notification not found or already marked as read!' });
+        }
+
+        return res.status(200).send({ message: 'Notification successfully marked!' });
+    } catch (error) {
+        return res.status(500).send({ message: 'Server error occurred while marking the notification as read.' });
+    }
+});
 
 module.exports = router;

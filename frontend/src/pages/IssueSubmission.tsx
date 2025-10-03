@@ -64,6 +64,7 @@ const IssueSubmission: React.FC = () => {
             if (photo) submissionData.append('photo', photo);
             if (audio) submissionData.append('audio', audio);
             submissionData.append('address', address);
+            submissionData.append('category', data.category);
             await createIssue(submissionData);
         } catch (error) {
             console.error(error);
@@ -89,7 +90,7 @@ const IssueSubmission: React.FC = () => {
                 toast.error(errorMsg, { position: "top-right" });
             }
         }
-    }, [isSuccess, isError]);
+    }, [isLoading]);
 
     return (
         <div className="main-board container">
@@ -171,6 +172,28 @@ const IssueSubmission: React.FC = () => {
                                     />
                                     {errors.address && (
                                         <small className="text-danger mt-1">{errors.address.message}</small>
+                                    )}
+                                </FormGroup>
+                            </Col>
+
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label for="category">Category</Label>
+                                    <select
+                                        className={`form-control ${classnames({
+                                            "is-invalid": errors.category,
+                                        })}`}
+                                        {...register("category", { required: "Category Type is required." })}
+                                    >
+                                        <option value="">Select...</option>
+                                        <option value="Road Maintenance">Road Maintenance</option>
+                                        <option value="Waste Disposal">Waste Disposal</option>
+                                        <option value="Streetlight Maintenance">Streetlight Maintenance</option>
+                                        
+                                    </select>
+
+                                    {errors.category && (
+                                        <small className="text-danger">{errors.category.message}</small>
                                     )}
                                 </FormGroup>
                             </Col>

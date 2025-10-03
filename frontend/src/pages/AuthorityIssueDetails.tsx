@@ -1,58 +1,21 @@
 import React, { useEffect } from 'react';
-import { Col, Row, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
-import { useParams } from 'react-router-dom';
-import { IComment } from '../redux/api/types';
-import { useGetIssueQuery, usePostIssueMutation } from '../redux/api/issueAPI';
-import { SubmitHandler, useForm } from 'react-hook-form';
-import classnames from 'classnames';
+import { Col, Row, Card, CardBody, Button } from 'reactstrap';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useGetIssueQuery } from '../redux/api/issueAPI';
 import FullScreenLoader from '../components/FullScreenLoader';
 import userImg from '../assets/images/user.png';
 import { getDateFormat } from '../utils/Utils';
-import { toast } from "react-toastify";
 
-const IssueDetails: React.FC = () => {
+const AuthorityIssueDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate(); // 👈 useNavigate hook
     const { data: issue, refetch: refetchIssue, isLoading } = useGetIssueQuery(id ?? '', {
         skip: !id,
     });
-    const [postIssue, { isLoading: isPostIssueLoading, isError, error, isSuccess, data }] = usePostIssueMutation();
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<IComment>();
 
     useEffect(() => {
         refetchIssue();
     }, [refetchIssue]);
-
-    const onSubmit: SubmitHandler<IComment> = async (formData) => {
-        formData.issueId = id ?? "";
-        formData.notificationType = "New Comment";
-        await postIssue(formData);
-        refetchIssue();
-    }
-
-    useEffect(() => {
-        if (isSuccess) {
-            toast.success(data?.message || "Comment posted successfully!");
-        }
-
-        if (isError) {
-            const errorData = (error as any)?.data?.error;
-            if (Array.isArray(errorData)) {
-                errorData.forEach((el: any) =>
-                    toast.error(el.message, { position: "top-right" })
-                );
-            } else {
-                toast.error(
-                    (error as any)?.data?.message || "An unexpected error occurred!",
-                    { position: "top-right" }
-                );
-            }
-        }
-    }, [isSuccess, isError]);
 
     if (isLoading) {
         return (<FullScreenLoader />);
@@ -60,6 +23,9 @@ const IssueDetails: React.FC = () => {
 
     return (
         <div className="container main-board">
+            <Button color="secondary" onClick={() => navigate(-1)} className="mb-3"> {/* 👈 Back Button */}
+                Back
+            </Button>
             <Card className='issue-card'>
                 <CardBody>
                     <Row className="my-3">
@@ -72,7 +38,6 @@ const IssueDetails: React.FC = () => {
                             <p><strong>Description:</strong> {issue.description}</p>
                             <p><strong>Address:</strong> {issue.address}</p>
                             <p><strong>Priority:</strong> {issue.priority}</p>
-                            <p><strong>Category:</strong> {issue?.category}</p>
                             <p><strong>Status:</strong> {issue.status}</p>
                         </Col>
                         <Col md={6}>
@@ -118,41 +83,12 @@ const IssueDetails: React.FC = () => {
                                     </div>
                                 ))}
                             </>
-                            <div className='mt-3'>
-                                <Form onSubmit={handleSubmit(onSubmit)}>
-                                    <FormGroup>
-                                        <textarea
-                                            id="content"
-                                            className={`form-control ${classnames({ 'is-invalid': errors.content })}`}
-                                            {...register('content', {
-                                                required: 'Comment is required.',
-                                                minLength: {
-                                                    value: 10,
-                                                    message: 'Comment must be at least 10 characters long.'
-                                                },
-                                                maxLength: {
-                                                    value: 500,
-                                                    message: 'Comment must be less than 500 characters long.'
-                                                }
-                                            })}
-                                        ></textarea>
-                                        {errors.content && (
-                                            <small className="text-danger">{errors.content.message}</small>
-                                        )}
-                                    </FormGroup>
-                                    <Button color="primary" type="submit">
-                                        Submit Comment
-                                    </Button>
-                                </Form>
-                            </div>
-
                         </Col>
                     </Row>
                 </CardBody>
             </Card>
-
         </div>
     );
 };
 
-export default IssueDetails;
+export default AuthorityIssueDetails;

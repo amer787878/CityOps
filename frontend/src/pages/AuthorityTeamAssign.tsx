@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { ChevronDown, Layers, MoreVertical } from "react-feather";
 import { ITeamIssue } from "../redux/api/types";
 import DataTable, { TableColumn } from "react-data-table-component";
+import FullScreenLoader from "../components/FullScreenLoader";
 
 const AuthorityTeamAssign: React.FC = () => {
     const navigate = useNavigate();
@@ -71,7 +72,7 @@ const AuthorityTeamAssign: React.FC = () => {
                     </DropdownToggle>
                     <DropdownMenu end container="body">
                         <DropdownItem className="w-100" onClick={() => navigate(`/authority/team-assigns/assign/${row._id}`)}>
-                            <Layers size={14} className="mx-1"  />
+                            <Layers size={14} className="mx-1" />
                             <span className="align-middle mx-2">Team Assign</span>
                         </DropdownItem>
                     </DropdownMenu>
@@ -81,28 +82,33 @@ const AuthorityTeamAssign: React.FC = () => {
     ];
 
     return (
-        <div className="main-board container">
-            <Row className="my-3">
-                <Col>
-                    <h3>Team Assign</h3>
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <DataTable
-                        title="Issues"
-                        data={issues || []}
-                        responsive
-                        className="react-dataTable"
-                        noHeader
-                        pagination
-                        paginationRowsPerPageOptions={[15, 30, 50, 100]}
-                        columns={columns}
-                        sortIcon={<ChevronDown />}
-                    />
-                </Col>
-            </Row>
-        </div>
+        <>
+            {isLoading ? (<FullScreenLoader />) : (
+                <div className="main-board container">
+                    <Row className="my-3">
+                        <Col>
+                            <h3>Team Assign</h3>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <DataTable
+                                title="Issues"
+                                data={issues || []}
+                                responsive
+                                className="react-dataTable"
+                                noHeader
+                                pagination
+                                paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                                columns={columns}
+                                sortIcon={<ChevronDown />}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
+        </>
+
     )
 }
 

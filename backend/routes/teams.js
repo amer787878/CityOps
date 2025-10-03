@@ -308,8 +308,6 @@ router.post('/create', verifyToken(['Authority']), upload.single("image"), async
 router.put('/update/:id', verifyToken(['Authority']), upload.single("image"), async (req, res) => {
     const { id } = req.params;
 
-    console.log(req.body)
-
     if (!id) {
         return res.status(400).send({
             status: 'error',

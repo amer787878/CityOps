@@ -20,8 +20,8 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
 
     const {
         handleSubmit,
-        setError,
-        clearErrors,
+        // setError,
+        // clearErrors,
     } = useForm<ITeamAssignRequest>();
 
     useEffect(() => {
@@ -52,11 +52,6 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
             toast.error("Please select a team to assign.");
             return;
         }
-
-        // if (!validateAddress(issue?.address ?? "")) {
-        //     toast.error("Invalid address. Please provide a valid address.");
-        //     return;
-        // }
 
         // Simulate submission
         console.log("Assigned Data:", { issueId: issue?._id, team: selectedTeam });
@@ -132,7 +127,7 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                     <div className="issue-summary mb-4">
                         <h5>Issue Summary</h5>
                         <p>
-                            <strong>Issue ID:</strong> {issue?._id}
+                            <strong>Issue ID:</strong> {issue?.issueNumber}
                         </p>
                         <p>
                             <strong>Description:</strong> {issue?.description}
@@ -152,6 +147,7 @@ const AuthorityTeamAssignUpdate: React.FC = () => {
                                             <img
                                                 src={issue.photoUrl}
                                                 className="img-fluid rounded"
+                                                alt="issue"
                                                 style={{ maxWidth: "300px", maxHeight: "200px" }}
                                             />
                                         </div>

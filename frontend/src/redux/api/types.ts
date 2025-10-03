@@ -32,6 +32,7 @@ export interface IssueSubmissionRequest {
     photo?: File;
     audio?: File;
     address: string;
+    category: string;
 }
 
 export interface IssueUpdateRequest {
@@ -77,7 +78,9 @@ export interface IIssue {
     priority: string;
     status: string;
     dateSubmitted: string;
+    issueNumber: number;
     upvotes: number;
+    category: string;
     upvoteCount: number;
 }
 
@@ -106,7 +109,9 @@ export interface ITeamIssue {
     status: string;
     dateSubmitted: string;
     upvotes: number;
+    issueNumber: number;
     upvoteCount: number;
+    category: string;
 }
 
 export interface IComment {
@@ -115,6 +120,7 @@ export interface IComment {
     author: string;
     timestamp: string;
     content: string;
+    notificationType: string;
 }
 
 export interface ITeam {

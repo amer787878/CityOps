@@ -7,6 +7,7 @@ import {
     Row,
     UncontrolledDropdown,
     Input,
+    Badge,
 } from "reactstrap";
 import DataTable, { TableColumn } from 'react-data-table-component';
 import { useState, useEffect, useCallback } from 'react';
@@ -34,10 +35,21 @@ const MyIssues: React.FC = () => {
         []
     );
 
-    const handleUpvote = useCallback((id: number) => {
-        console.log(`Upvoted issue with ID: ${id}`);
-        // Add your logic for handling upvote here
-    }, []);
+    const renderBadge = (type: 'priority' | 'status', value: string) => {
+        const badgeColors: Record<string, string> = {
+            High: 'info',
+            Medium: 'success',
+            Low: 'primary',
+            Active: 'primary',
+            Pending: 'warning',
+            Suspended: 'danger',
+        };
+        return (
+            <Badge color={badgeColors[value] || 'secondary'} className="px-3 py-2" pill>
+                {value}
+            </Badge>
+        );
+    };
 
     const columns: TableColumn<IIssue>[] = [
         {
@@ -60,8 +72,13 @@ const MyIssues: React.FC = () => {
             sortable: true,
         },
         {
+            name: 'Category',
+            selector: (row) => row?.category,
+            sortable: true,
+        },
+        {
             name: 'Status',
-            selector: (row) => row.status,
+            cell: (row) => renderBadge('status', row.status),
             sortable: true,
         },
         {

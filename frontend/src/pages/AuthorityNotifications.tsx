@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router-dom";
 import {
     Badge,
-    Button,
     Card,
     Col,
     DropdownItem,
@@ -16,7 +15,7 @@ import Select from "react-select";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { toast } from "react-toastify";
 import { Bookmark, ChevronDown, MoreVertical } from "react-feather";
-import { useGetNotificationsQuery } from "../redux/api/notificationAPI";
+import { useGetNotificationsQuery, useReadMarkNotificationMutation } from "../redux/api/notificationAPI";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/material_blue.css"; // Flatpickr theme
 import FullScreenLoader from "../components/FullScreenLoader";
@@ -27,7 +26,18 @@ const AuthorityNotifications: React.FC = () => {
     const [type, setType] = useState<string>("");
 
     // Initial date range state
-    const [dateRange, setDateRange] = useState<[Date, Date]>([new Date(), new Date(new Date().setDate(new Date().getDate() + 1))]);
+    const [dateRange, setDateRange] = useState<[Date, Date]>([
+        (() => {
+            const date = new Date();
+            date.setDate(date.getDate() - 15);
+            return new Date(date);
+        })(),
+        (() => {
+            const date = new Date();
+            date.setDate(date.getDate() + 15);
+            return new Date(date);
+        })()
+    ]);
 
     const formatToYYYYMMDD = (date: Date) => date.toISOString().split('T')[0];
 
@@ -39,14 +49,37 @@ const AuthorityNotifications: React.FC = () => {
 
     const { data: notifications = [], refetch, isLoading } = useGetNotificationsQuery(queryParams);
 
+    const [readMarkNotification, { isLoading: isReadMarkLoading, isError, error, isSuccess, data }] = useReadMarkNotificationMutation();
+
     useEffect(() => {
         refetch();
     }, [type, dateRange]);
 
-    const handleMarkAsRead = (id: string) => {
-        // Simulate marking notification as read
-        toast.success("Notification marked as read.");
+    const handleMarkAsRead = async (id: string) => {
+        console.log(id)
+        await readMarkNotification(id);
     };
+
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success(data?.message || "Notification successfully marked!");
+            navigate("/authority/notifications");
+        }
+
+        if (isError) {
+            const errorData = (error as any)?.data?.error;
+            if (Array.isArray(errorData)) {
+                errorData.forEach((el: any) =>
+                    toast.error(el.message, { position: "top-right" })
+                );
+            } else {
+                toast.error(
+                    (error as any)?.data?.message || "An unexpected error occurred!",
+                    { position: "top-right" }
+                );
+            }
+        }
+    }, [isReadMarkLoading]);
 
     const typeOptions = [
         { value: "New Comment", label: "New Comment" },
@@ -69,8 +102,8 @@ const AuthorityNotifications: React.FC = () => {
     };
 
     const renderBadge = (type: 'read', value: boolean) => {
-        const badgeColor = value ? "primary": "danger";
-        const badgeName = value ? "Read": "Unread";
+        const badgeColor = value ? "primary" : "danger";
+        const badgeName = value ? "Read" : "Unread";
         return (
             <Badge color={badgeColor || 'secondary'} className="px-3 py-2" pill>
                 {badgeName}
@@ -93,7 +126,7 @@ const AuthorityNotifications: React.FC = () => {
             name: "Issue ID",
             selector: (row) => row.issue?.issueNumber,
             cell: (row) => (
-                <a href={`/issues/${row.issue?._id}`} className="text-primary">
+                <a href={`/authority/issue-detail/${row.issue?._id}`} className="text-primary">
                     {row.issue?.issueNumber}
                 </a>
             ),
@@ -118,7 +151,7 @@ const AuthorityNotifications: React.FC = () => {
                                 <MoreVertical size={14} className="cursor-pointer action-btn" />
                             </DropdownToggle>
                             <DropdownMenu end container="body">
-                                <DropdownItem onClick={() => handleMarkAsRead(row.id)}>
+                                <DropdownItem onClick={() => handleMarkAsRead(row._id)}>
                                     <Bookmark size={14} className="mx-1" />
                                     <span className="align-middle mx-2">Mark as Read</span>
                                 </DropdownItem>
@@ -177,7 +210,7 @@ const AuthorityNotifications: React.FC = () => {
                                     responsive
                                     noHeader
                                     pagination
-                                    paginationRowsPerPageOptions={[10, 20, 50]}
+                                    paginationRowsPerPageOptions={[15, 30, 50, 100]}
                                     sortIcon={<ChevronDown />}
                                 />
                             </Card>

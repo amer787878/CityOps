@@ -7,6 +7,7 @@ const issueSchema = new mongoose.Schema({
   audioUrl: { type: String },
   address: { type: String, required: true },
   priority: { type: String, enum: ['Critical', 'Moderate', 'Low'], default: 'Moderate' },
+  category: { type: String, enum: ['Road Maintenance', 'Waste Disposal', 'Streetlight Repair'], default: '' },
   status: { type: String, enum: ['Pending', 'In Progress', 'Resolved'], default: 'Pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

@@ -50,9 +50,9 @@ const Issues: React.FC = () => {
 
     const renderBadge = (type: 'priority' | 'status', value: string) => {
         const badgeColors: Record<string, string> = {
-            High: 'info',
-            Medium: 'success',
             Low: 'primary',
+            Moderate: 'info',
+            Critical: 'danger',
             Active: 'primary',
             Pending: 'warning',
             Suspended: 'danger',
@@ -65,6 +65,11 @@ const Issues: React.FC = () => {
     };
 
     const columns: TableColumn<IIssue>[] = [
+        {
+            name: 'Issue ID',
+            selector: (row) => row.issueNumber,
+            sortable: true,
+        },
         {
             name: 'Description',
             selector: (row) =>
@@ -81,7 +86,12 @@ const Issues: React.FC = () => {
         },
         {
             name: 'Priority',
-            selector: (row) => row.priority,
+            cell: (row) => renderBadge('priority', row.priority),
+            sortable: true,
+        },
+        {
+            name: 'Category',
+            selector: (row) => row?.category,
             sortable: true,
         },
         {
@@ -149,8 +159,8 @@ const Issues: React.FC = () => {
                             <Select
                                 styles={customStyles}
                                 options={[
-                                    { value: 'High', label: 'High' },
-                                    { value: 'Medium', label: 'Medium' },
+                                    { value: 'Critical', label: 'Critical' },
+                                    { value: 'Moderate', label: 'Moderate' },
                                     { value: 'Low', label: 'Low' },
                                 ]}
                                 onChange={(e) => handleFilterChange('priority', e?.value || '')}

@@ -335,7 +335,7 @@ router.post(
         }
 
         try {
-            const { description, address } = req.body;
+            const { description, address, category } = req.body;
             const photoUrl = req.files.photo ? process.env.SERVER_URL + '/' + req.files.photo[0].path.replace(/\\/g, '/').replace('public/', '') : null;
             const audioUrl = req.files.audio ? process.env.SERVER_URL + '/' + req.files.audio[0].path.replace(/\\/g, '/').replace('public/', '') : null;
 
@@ -354,6 +354,7 @@ router.post(
                 photoUrl,
                 audioUrl,
                 address,
+                category,
                 priority: classification.priority || 'Moderate',
                 createdBy: req.user._id
             });
@@ -464,11 +465,12 @@ router.put(
 
         try {
             const issueId = req.params.id;
-            const { description, address } = req.body;
+            const { description, address, category } = req.body;
 
             const updateFields = {};
             if (description) updateFields.description = description;
             if (address) updateFields.address = address;
+            if (category) updateFields.category = category;
 
             // File handling for optional updates
             if (req.files && req.files.photo) {
@@ -688,6 +690,8 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
                     address: 1,
                     priority: 1,
                     status: 1,
+                    issueNumber: 1,
+                    category: 1,
                     createdBy: '$createdByDetails', // Include the formatted `createdBy` details
                     comments: 1, // Include the updated `comments` array
                     createdAt: 1,
@@ -769,6 +773,67 @@ router.put('/upvote/:id', verifyToken(['Admin', 'Authority', 'Citizen']), async 
     }
 });
 
+/**
+ * @swagger
+ * /api/issues/getTeamIssues:
+ *   get:
+ *     summary: Fetch team issues with upvote counts
+ *     description: Retrieves all team issues with upvote counts, sorted by creation date (newest first).
+ *     tags:
+ *       - Issues
+ *     responses:
+ *       200:
+ *         description: Successfully fetched issues
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                     example: "615ecf2edc78b2aefc5d10b5"
+ *                     description: "Unique identifier of the issue."
+ *                   description:
+ *                     type: string
+ *                     example: "Issue related to server downtime"
+ *                     description: "Description of the issue."
+ *                   photoUrl:
+ *                     type: string
+ *                     example: "http://example.com/image.png"
+ *                     description: "URL of the associated image."
+ *                   audioUrl:
+ *                     type: string
+ *                     example: "http://example.com/audio.mp3"
+ *                     description: "URL of the associated audio."
+ *                   address:
+ *                     type: string
+ *                     example: "123 Main St"
+ *                     description: "Address related to the issue."
+ *                   priority:
+ *                     type: string
+ *                     example: "Critical"
+ *                     description: "Priority of the issue."
+ *                   status:
+ *                     type: string
+ *                     example: "Pending"
+ *                     description: "Status of the issue."
+ *                   upvoteCount:
+ *                     type: number
+ *                     example: 15
+ *                     description: "Total number of upvotes for the issue."
+ *                   createdAt:
+ *                     type: string
+ *                     example: "2023-10-12T12:00:00.000Z"
+ *                     description: "Creation date of the issue."
+ *                   updatedAt:
+ *                     type: string
+ *                     example: "2023-12-12T12:00:00.000Z"
+ *                     description: "Last updated date of the issue."
+ *       500:
+ *         description: Server encountered an unexpected error
+ */
 router.get(
     '/getTeamIssues',
     async (req, res) => {

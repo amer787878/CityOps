@@ -6,7 +6,7 @@ const teamSchema = new mongoose.Schema(
         name: { type: String, required: true },
         image: { type: String },
         members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-        category: { type: String, enum: ['Road Repair', 'Streetlight Maintenance'], default: 'Road Repair' },
+        category: { type: String, enum: ['Road Repair', 'Waste Disposal', 'Streetlight Maintenance'], default: 'Road Repair' },
         availability: { type: String, enum: ['Available', 'Busy'], default: 'Available' },
         teamNumber: { type: Number, unique: true },
     },

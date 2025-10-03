@@ -26,6 +26,7 @@ import AuthorityNotifications from './pages/AuthorityNotifications';
 import AuthorityTeamAssign from './pages/AuthorityTeamAssign';
 import IssueUpdate from './pages/IssueUpdate';
 import AuthorityTeamAssignUpdate from './pages/AuthorityTeamAssignUpdate';
+import AuthorityIssueDetails from './pages/AuthorityIssueDetails';
 
 const App: React.FC = () => {
   const getHomeRoute = () => {
@@ -53,6 +54,7 @@ const App: React.FC = () => {
           <Route element={<RequiredUser allowedRoles={['Authority']} />}>
             <Route path="authority/dashboard" element={<AuthorityDashboard />} />
             <Route path="authority/notifications" element={<AuthorityNotifications />} />
+            <Route path="authority/issue-detail/:id" element={<AuthorityIssueDetails />} />
             <Route path="authority/team-assigns" element={<AuthorityTeamAssign />} />
             <Route path="authority/team-assigns/assign/:id" element={<AuthorityTeamAssignUpdate />} />
             <Route path="authority/teams" element={<Teams />} />
