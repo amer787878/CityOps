@@ -180,6 +180,7 @@ const AuthorityNotifications: React.FC = () => {
                                 options={typeOptions}
                                 onChange={handleTypeChange}
                                 placeholder="Filter by Type"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={4}>

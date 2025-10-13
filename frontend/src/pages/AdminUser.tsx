@@ -182,6 +182,7 @@ const AdminUser: React.FC = () => {
                                 options={roleOptions}
                                 onChange={(e) => handleFilterChange('role', e?.value || '')}
                                 placeholder="Filter by Role"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={4}>
@@ -189,6 +190,7 @@ const AdminUser: React.FC = () => {
                                 options={statusOptions}
                                 onChange={(e) => handleFilterChange('status', e?.value || '')}
                                 placeholder="Filter by Status"
+                                isClearable={true}
                             />
                         </Col>
                     </Row>

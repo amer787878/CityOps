@@ -207,6 +207,7 @@ const TeamCreate: React.FC = () => {
                                                     "react-select is-invalid": errors.members,
                                                 })}
                                                 onChange={(selected) => field.onChange(selected)}
+                                                isClearable={true}
                                             />
                                         )}
                                     />

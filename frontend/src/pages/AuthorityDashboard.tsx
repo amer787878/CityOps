@@ -232,6 +232,7 @@ const AuthorityDashboard: React.FC = () => {
                                 ]}
                                 onChange={(e) => handleFilterChange('priority', e?.value)}
                                 placeholder="Filter by Priority"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={2}>
@@ -244,6 +245,7 @@ const AuthorityDashboard: React.FC = () => {
                                 ]}
                                 onChange={(e) => handleFilterChange('status', e?.value)}
                                 placeholder="Filter by Status"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={2}>
@@ -256,6 +258,7 @@ const AuthorityDashboard: React.FC = () => {
                                 ]}
                                 onChange={(e) => handleFilterChange('category', e?.value)}
                                 placeholder="Filter by Category"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={3}>

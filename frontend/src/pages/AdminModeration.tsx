@@ -1,239 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Row, Col, Card, CardBody, Input, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
-import { useNavigate } from 'react-router-dom';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState } from 'react';
+import { Container, Row, Col, Button, Modal, ModalHeader, ModalBody, ModalFooter, Input, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
+import DataTable, { TableColumn } from 'react-data-table-component';
+import { CheckSquare, ChevronDown, MoreVertical, Trash2 } from 'react-feather';
+import { PendingSubmission, ReportedComment } from '../redux/api/types';
+import { useGetModerationQuery } from '../redux/api/moderationAPI';
 
-interface IPendingIssue {
-    id: number;
-    description: string;
-    submittedBy: string;
-    photo?: string;
-}
+const AdminModerationPage: React.FC = () => {
 
-interface IReportedComment {
-    id: number;
-    content: string;
-    linkedIssueId: number;
-    flagReason: string;
-    reportedBy: string;
-}
-
-const AdminModeration: React.FC = () => {
-    const [pendingIssues, setPendingIssues] = useState<IPendingIssue[]>([]);
-    const [reportedComments, setReportedComments] = useState<IReportedComment[]>([]);
-    const [rejectReason, setRejectReason] = useState<string>('');
-    const [modalOpen, setModalOpen] = useState<boolean>(false);
-    const [selectedIssueId, setSelectedIssueId] = useState<number | null>(null);
-    const navigate = useNavigate();
+    const { data: moderationData = {}, refetch, isLoading } = useGetModerationQuery();
 
     useEffect(() => {
-        // Mock data or fetch from API
-        const mockIssues: IPendingIssue[] = [
-            {
-                id: 1,
-                description: 'Broken streetlight near Elm Avenue.',
-                submittedBy: 'John Doe',
-                photo: '/path/to/photo1.jpg',
-            },
-            {
-                id: 2,
-                description: 'Overflowing garbage bin on Main Street.',
-                submittedBy: 'Jane Smith',
-                photo: '/path/to/photo2.jpg',
-            },
-        ];
+        refetch();
+    }, [refetch]);
 
-        const mockComments: IReportedComment[] = [
-            {
-                id: 1,
-                content: 'This issue is stupid.',
-                linkedIssueId: 101,
-                flagReason: 'Inappropriate language',
-                reportedBy: 'Alice Johnson',
-            },
-            {
-                id: 2,
-                content: 'Not relevant to this issue.',
-                linkedIssueId: 102,
-                flagReason: 'Off-topic comment',
-                reportedBy: 'Bob Williams',
-            },
-        ];
+    console.log(moderationData)
 
-        setPendingIssues(mockIssues);
-        setReportedComments(mockComments);
-    }, []);
+    const [rejectReason, setRejectReason] = useState<string>('');
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [selectedIssue, setSelectedIssue] = useState<string>('');
 
-    const handleApproveIssue = (id: number) => {
-        // Approve issue logic
-        setPendingIssues((prev) => prev.filter((issue) => issue.id !== id));
-        console.log(`Issue ${id} approved.`);
+    const toggleModal = () => {
+        setModalOpen(!modalOpen);
     };
 
-    const handleRejectIssue = (id: number) => {
-        setSelectedIssueId(id);
-        setModalOpen(true);
+    const handleReject = (id: string) => {
+        setSelectedIssue(id);
+        toggleModal();
     };
 
-    const confirmRejectIssue = () => {
-        if (selectedIssueId !== null) {
-            // Reject issue logic
-            setPendingIssues((prev) => prev.filter((issue) => issue.id !== selectedIssueId));
-            console.log(`Issue ${selectedIssueId} rejected. Reason: ${rejectReason}`);
-        }
-        setRejectReason('');
-        setModalOpen(false);
+    const handleApproveSubmission = (id: string) => {
+        
     };
 
-    const handleApproveComment = (id: number) => {
-        // Approve comment logic
-        setReportedComments((prev) => prev.filter((comment) => comment.id !== id));
-        console.log(`Comment ${id} approved.`);
+    const handleRejectSubmission = () => {
+        
+        toggleModal();
     };
 
-    const handleDeleteComment = (id: number) => {
-        // Delete comment logic
-        setReportedComments((prev) => prev.filter((comment) => comment.id !== id));
-        console.log(`Comment ${id} deleted.`);
+    const handleApproveComment = (issueId: string) => {
+        
     };
+
+    const handleDeleteComment = (issueId: string) => {
+        
+    };
+
+    // Define columns for Pending Submissions table
+    const pendingColumns: TableColumn<PendingSubmission>[] = [
+        {
+            name: 'Issue ID',
+            selector: row => row.issueNumber,
+            sortable: true,
+        },
+        {
+            name: 'Description',
+            selector: row => row.description,
+            sortable: true,
+        },
+        {
+            name: 'Submitted By',
+            selector: row => row.createdBy?.fullname,
+            sortable: true,
+        },
+        {
+            name: 'Photo',
+            cell: (row) => (
+                row.photoUrl ? <img src={row.photoUrl} alt="Issue" width="50" height="50" /> : 'No photo'
+            ),
+            sortable: false,
+        },
+        {
+            name: 'Actions',
+            cell: (row) => (
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="div" className="btn btn-sm">
+                        <MoreVertical size={14} className="cursor-pointer action-btn" />
+                    </DropdownToggle>
+                    <DropdownMenu end container="body">
+                        <DropdownItem className="w-100" onClick={() => handleApproveSubmission(row._id)}>
+                            <CheckSquare size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Approve</span>
+                        </DropdownItem>
+                        <DropdownItem className="w-100" onClick={() => handleReject(row._id)}>
+                            <Trash2 size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Reject</span>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
+            ),
+        },
+    ];
+
+    // Define columns for Reported Comments table
+    const reportedColumns: TableColumn<ReportedComment>[] = [
+        {
+            name: 'Comment',
+            selector: row => row.content,
+            sortable: true,
+        },
+        {
+            name: 'Issue ID',
+            selector: row => row.issue?.issueNumber,
+            sortable: true,
+        },
+        {
+            name: 'Flag Reason',
+            selector: row => row.flagReason,
+            sortable: true,
+        },
+        {
+            name: 'Reported By',
+            selector: row => row.createdBy?.fullname,
+            sortable: true,
+        },
+        {
+            name: 'Actions',
+            cell: (row) => (
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="div" className="btn btn-sm">
+                        <MoreVertical size={14} className="cursor-pointer action-btn" />
+                    </DropdownToggle>
+                    <DropdownMenu end container="body">
+                        <DropdownItem className="w-100" onClick={() => handleApproveComment(row.issueId)}>
+                            <CheckSquare size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Approve</span>
+                        </DropdownItem>
+                        <DropdownItem className="w-100" onClick={() => handleDeleteComment(row.issueId)}>
+                            <Trash2 size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Reject</span>
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
+            ),
+        },
+    ];
 
     return (
-        <div className="container">
-            <Row className="my-3">
+        <Container className='main-board'>
+            <Row className="my-4">
                 <Col>
-                    <h3>Moderation</h3>
+                    <h3>Admin Moderation Page</h3>
                 </Col>
             </Row>
 
-            <Row className="my-3">
-                <Col md={6}>
-                    <Card>
-                        <CardBody>
-                            <h5>Pending Submissions</h5>
-                            <Table responsive>
-                                <thead>
-                                    <tr>
-                                        <th>Issue ID</th>
-                                        <th>Description</th>
-                                        <th>Submitted By</th>
-                                        <th>Photo</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pendingIssues.map((issue) => (
-                                        <tr key={issue.id}>
-                                            <td>{issue.id}</td>
-                                            <td>{issue.description}</td>
-                                            <td>{issue.submittedBy}</td>
-                                            <td>
-                                                {issue.photo ? (
-                                                    <img
-                                                        src={issue.photo}
-                                                        alt="Issue"
-                                                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                                                    />
-                                                ) : (
-                                                    'No Photo'
-                                                )}
-                                            </td>
-                                            <td>
-                                                <Button
-                                                    color="success"
-                                                    size="sm"
-                                                    onClick={() => handleApproveIssue(issue.id)}
-                                                >
-                                                    Approve
-                                                </Button>{' '}
-                                                <Button
-                                                    color="danger"
-                                                    size="sm"
-                                                    onClick={() => handleRejectIssue(issue.id)}
-                                                >
-                                                    Reject
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-                        </CardBody>
-                    </Card>
-                </Col>
-                <Col md={6}>
-                    <Card>
-                        <CardBody>
-                            <h5>Reported Comments</h5>
-                            <Table responsive>
-                                <thead>
-                                    <tr>
-                                        <th>Comment</th>
-                                        <th>Linked Issue</th>
-                                        <th>Reason</th>
-                                        <th>Reported By</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reportedComments.map((comment) => (
-                                        <tr key={comment.id}>
-                                            <td>{comment.content}</td>
-                                            <td>
-                                                <Button
-                                                    color="link"
-                                                    onClick={() => navigate(`/admin/issues/${comment.linkedIssueId}`)}
-                                                >
-                                                    {comment.linkedIssueId}
-                                                </Button>
-                                            </td>
-                                            <td>{comment.flagReason}</td>
-                                            <td>{comment.reportedBy}</td>
-                                            <td>
-                                                <Button
-                                                    color="success"
-                                                    size="sm"
-                                                    onClick={() => handleApproveComment(comment.id)}
-                                                >
-                                                    Approve
-                                                </Button>{' '}
-                                                <Button
-                                                    color="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </Table>
-                        </CardBody>
-                    </Card>
+            <Row className='my-3'>
+                <Col>
+                    <h5>Pending Submissions</h5>
+                    <DataTable
+                        columns={pendingColumns}
+                        data={moderationData.pendingSubmissionIssues}
+                        pagination
+                        responsive
+                        noHeader
+                        paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                        sortIcon={<ChevronDown />}
+                    />
                 </Col>
             </Row>
 
-            {/* Reject Issue Modal */}
-            <Modal isOpen={modalOpen} toggle={() => setModalOpen(!modalOpen)}>
-                <ModalHeader toggle={() => setModalOpen(!modalOpen)}>Reject Issue</ModalHeader>
+            <Row className='my-3'>
+                <Col>
+                    <h5>Reported Comments</h5>
+                    <DataTable
+                        columns={reportedColumns}
+                        data={moderationData.reportedComments}
+                        pagination
+                        noHeader
+                        paginationRowsPerPageOptions={[15, 30, 50, 100]}
+                        responsive
+                        sortIcon={<ChevronDown />}
+                    />
+                </Col>
+            </Row>
+
+            {/* Modal for rejecting submission */}
+            <Modal isOpen={modalOpen} toggle={toggleModal}>
+                <ModalHeader toggle={toggleModal}>Reject Submission</ModalHeader>
                 <ModalBody>
                     <Input
                         type="textarea"
-                        placeholder="Provide a reason for rejection"
+                        placeholder="Enter rejection reason"
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                     />
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="primary" onClick={confirmRejectIssue}>
-                        Confirm
+                    <Button color="primary" onClick={handleRejectSubmission}>
+                        Submit
                     </Button>{' '}
-                    <Button color="secondary" onClick={() => setModalOpen(false)}>
+                    <Button color="secondary" onClick={toggleModal}>
                         Cancel
                     </Button>
                 </ModalFooter>
             </Modal>
-        </div>
+        </Container>
     );
 };
 
-export default AdminModeration;
+export default AdminModerationPage;

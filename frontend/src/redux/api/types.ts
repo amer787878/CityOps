@@ -40,6 +40,7 @@ export interface IssueUpdateRequest {
     photo?: File;
     audio?: File;
     address: string;
+    category: string;
 }
 
 export interface TeamCreateRequest {
@@ -94,12 +95,12 @@ export interface IIssueDetail {
     upvotes: number;
     upvoteCount: number;
     createdBy: {
-      _id: number;
-      fullname: string;
-      email: string;
-      role: string;
+        _id: number;
+        fullname: string;
+        email: string;
+        role: string;
     };
-  }
+}
 
 export interface ITeamIssue {
     _id: number;
@@ -199,5 +200,36 @@ export interface INotification {
     read: boolean;
 }
 
+export interface PendingSubmission {
+    _id: string;
+    description: string;
+    userName: string;
+    issueNumber: number;
+    photoUrl?: string;
+    createdBy: {
+        _id: number;
+        fullname: string;
+        email: string;
+        role: string;
+    };
+}
+
+export interface ReportedComment {
+    _id: string;
+    content: string;
+    issueId: string;
+    flagReason: string;
+    userName: string;
+    issue: {
+        _id: number;
+        issueNumber: string;
+    };
+    createdBy: {
+        _id: number;
+        fullname: string;
+        email: string;
+        role: string;
+    };
+}
 
 

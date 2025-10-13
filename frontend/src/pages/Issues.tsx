@@ -165,6 +165,7 @@ const Issues: React.FC = () => {
                                 ]}
                                 onChange={(e) => handleFilterChange('priority', e?.value || '')}
                                 placeholder="Filter by Priority"
+                                isClearable={true}
                             />
                         </Col>
                         <Col md={4}>

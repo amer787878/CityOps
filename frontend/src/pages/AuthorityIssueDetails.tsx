@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react';
 import { Col, Row, Card, CardBody, Button } from 'reactstrap';
 import { useParams, useNavigate } from 'react-router-dom';
