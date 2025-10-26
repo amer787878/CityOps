@@ -1,39 +1,50 @@
 # CityOps – Smart City Issue Reporting
 
-CityOps helps residents report city problems (potholes, broken lights, missed garbage) and lets staff triage & fix them. Planned features include AI-based classification (type + priority), maps for exact location, community votes/comments, and a staff dashboard.
+CityOps helps residents report city problems (potholes, broken lights, missed garbage) and enables municipal staff to triage, assign, and resolve them efficiently.
 
-**Stack:** React, Node.js/Express, MongoDB (Socket.IO, OpenAI GPT, Google Maps planned)
+**Stack:** React • Node.js/Express • MongoDB (Mongoose) • OpenAI GPT (AI classification)  
+**Docs:** Swagger UI available at `/api-docs`  
 
 ---
 
-## Current Progress
-- Project scaffolded with separate **frontend** and **backend**.
-- **UI only** for: **Home**, **Register**, **Login** (designs added).
-- Auth logic & Mongo DB wiring.
-- **UI only** for: **Community`s issues**, **Issue submit**, **Issue detail** (designs added)
-- **UI Only** for: Authority Dashboard & Basic admin page.
-- **Backend logic**: Added issue submission basic route with logic (not using AI classification yet)
-- Admin login + Team management for authority
-- Added Authority dashboard fully (backend + frontend)
-- Added community issues fully (backend+frontend)
-- Added citizen dashboard
-- Added comments on specific issue by other citizens.
-- Added noticiations
-- Added team assignment to issue
-- Added analytics page for authrotiy
-- Added admin moderation for comments on issues
+## Features
 
-## Roadmap (next steps)
-- Integrate AI classification using chatGPT to issue submission.
+### For Citizens
+- **Register & Login** (JWT-based auth).
+- **Submit Issues** with title, description, photos, and location.
+- **Auto Classification (AI):** type & priority suggested via OpenAI (manual override supported).
+- **My Dashboard:** track issue status and updates.
+- **Community View:** browse all issues, filter & sort.
+- **Comments:** discuss specific issues.
+- **Notifications:** get updates when status or assignments change.
+
+### For Municipal Staff / Authority
+- **Authority Dashboard:** KPIs for open/in-progress/resolved issues.
+- **Team Management:** create teams and manage members.
+- **Assignments:** assign issues to teams or staff.
+- **Status Workflow:** update lifecycle (e.g., New → In Progress → Resolved).
+- **Analytics:** trends, volumes, SLA-style views.
+- **Moderation:** admin tools for moderating community comments.
+- **Admin Reports:** consolidated reports for oversight and auditing.
+
+---
+
+## Architecture (High Level)
+- **Frontend:** React SPA communicating with REST API.
+- **Backend:** Node.js/Express with modular routes & controllers.
+- **Database:** MongoDB with Mongoose models (Users, Issues, Comments, Notifications, Teams).
+- **Auth:** JWT Bearer (documented in Swagger security schemes).
+- **AI:** OpenAI endpoint for issue classification (type + priority).
+- **CORS:** Restricted to configured allowed origins (defaults include `http://localhost:9000`, `https://localhost:9000`).
 
 ## Run (dev)
 ```bash
 # Backend
 cd backend
 npm install
-npm run dev
+npm start
 
 # Frontend
-cd ../frontend
+cd frontend
 npm install
 npm start
