@@ -3,7 +3,7 @@
 CityOps helps residents report city problems (potholes, broken lights, missed garbage) and enables municipal staff to triage, assign, and resolve them efficiently.
 
 **Stack:** React • Node.js/Express • MongoDB (Mongoose) • OpenAI GPT (AI classification)  
-**Docs:** Swagger UI available at `/api-docs`  
+**Docs:** Swagger UI available at `/api-docs`, run it from backend: http://localhost:3009/api-docs
 
 ---
 
