@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import {
     Col,
@@ -9,21 +10,32 @@ import {
     Card,
     CardBody,
     Badge,
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Button,
 } from 'reactstrap';
 import DataTable, { TableColumn } from 'react-data-table-component';
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Edit, Eye, MoreVertical, Plus, Trash } from 'react-feather';
-import { useGetIssuesQuery } from '../redux/api/issueAPI';
+import { Archive, ChevronDown, Eye, MoreVertical, Trash } from 'react-feather';
+import { useDeleteIssueMutation, useGetIssuesQuery } from '../redux/api/issueAPI';
 import FullScreenLoader from '../components/FullScreenLoader';
 import { IIssue } from '../redux/api/types';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/material_blue.css";
 import GooglePlacesAutocomplete from 'react-google-autocomplete';
+import { toast } from 'react-toastify';
 
 const AuthorityDashboard: React.FC = () => {
     const navigate = useNavigate();
+
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [modalDeleteVisibility, setModalDeleteVisibility] = useState<boolean>(false);
+
+    const [deleteIssue] = useDeleteIssueMutation();
 
     const [dateRange, setDateRange] = useState<[Date, Date]>([
         (() => {
@@ -35,7 +47,7 @@ const AuthorityDashboard: React.FC = () => {
             const date = new Date();
             date.setDate(date.getDate() + 15);
             return new Date(date);
-        })()
+        })(),
     ]);
 
     const formatToYYYYMMDD = (date: Date) => date.toISOString().split('T')[0];
@@ -50,6 +62,11 @@ const AuthorityDashboard: React.FC = () => {
         location: '',
     });
 
+    const toggleDeleteModal = (id: string | null = null) => {
+        setSelectedId(id);
+        setModalDeleteVisibility(!modalDeleteVisibility);
+    };
+
     // Query to fetch issues
     const { data: issues = [], refetch, isLoading } = useGetIssuesQuery(filters);
 
@@ -62,20 +79,28 @@ const AuthorityDashboard: React.FC = () => {
         critical: 0,
     });
 
-    // Re-fetch issues when filters are updated
+    // Only re-fetch when filters or issues data change
     useEffect(() => {
-        refetch();
-        calculateStats(issues); // Calculate statistics based on the issues
-    }, [refetch, issues]);
+        if (filters) {
+            refetch();
+        }
+    }, [filters, refetch]);
+
+    useEffect(() => {
+        if (issues) {
+            calculateStats(issues); // Calculate statistics based on the issues
+        }
+    }, [issues]);
 
     const renderBadge = (type: 'priority' | 'status', value: string) => {
         const badgeColors: Record<string, string> = {
             Low: 'primary',
             Moderate: 'info',
             Critical: 'danger',
-            Active: 'primary',
+            'In Progress': 'primary',
             Pending: 'warning',
-            Suspended: 'danger',
+            Resolved: 'success',
+            Closed: 'danger',  // color for Closed status
         };
         return (
             <Badge color={badgeColors[value] || 'secondary'} className="px-3 py-2" pill>
@@ -94,7 +119,10 @@ const AuthorityDashboard: React.FC = () => {
         },
         {
             name: 'Description',
-            selector: (row) => row.description,
+            selector: (row) =>
+                row.description.length > 30
+                    ? `${row.description.substring(0, 30)}...`
+                    : row.description,
             sortable: true,
             grow: 2,
         },
@@ -120,7 +148,7 @@ const AuthorityDashboard: React.FC = () => {
         },
         {
             name: 'Upvotes',
-            selector: (row) => row.upvotes,
+            selector: (row) => row.upvoteCount,
             sortable: true,
         },
         {
@@ -131,23 +159,18 @@ const AuthorityDashboard: React.FC = () => {
                         <MoreVertical size={14} className="cursor-pointer action-btn" />
                     </DropdownToggle>
                     <DropdownMenu end container="body">
-                        <DropdownItem onClick={() => navigate(`/authority/issues/${row._id}`)}>
+                        <DropdownItem onClick={() => navigate(`/authority/issue-detail/${row._id}`)}>
                             <Eye size={14} className="mx-1" />
                             <span className="align-middle mx-2">View</span>
                         </DropdownItem>
-                        <DropdownItem onClick={() => handleAssignTeam(row._id)}>
-                            <Plus size={14} className="mx-1" />
-                            <span className="align-middle mx-2">Assign Team</span>
+                        <DropdownItem
+                            className="w-100"
+                            onClick={() => navigate(`/authority/issues-update/${row._id}`)}
+                        >
+                            <Archive size={14} className="mx-1" />
+                            <span className="align-middle mx-2">Edit</span>
                         </DropdownItem>
-                        <DropdownItem onClick={() => handleChangeStatus(row._id)}>
-                            <Edit size={14} className="mx-1" />
-                            <span className="align-middle mx-2">Change Status</span>
-                        </DropdownItem>
-                        <DropdownItem onClick={() => handleAddNotes(row._id)}>
-                            <Plus size={14} className="mx-1" />
-                            <span className="align-middle mx-2">Add Notes</span>
-                        </DropdownItem>
-                        <DropdownItem onClick={() => handleDeleteIssue(row._id)}>
+                        <DropdownItem onClick={() => toggleDeleteModal(row._id)}>
                             <Trash size={14} className="mx-1" />
                             <span className="align-middle mx-2">Delete</span>
                         </DropdownItem>
@@ -162,9 +185,17 @@ const AuthorityDashboard: React.FC = () => {
         const total = data.length;
         const pending = data.filter((issue) => issue.status === 'Pending').length;
         const inProgress = data.filter((issue) => issue.status === 'In Progress').length;
-        const resolved = data.filter((issue) => issue.status === 'Resolved').length;
+        const resolved = data.filter((issue) => issue.status === 'Resolved' || issue.status === 'Closed').length;
         const critical = data.filter((issue) => issue.priority === 'Critical').length;
-        setStats({ total, pending, inProgress, resolved, critical });
+        if (
+            stats.total !== total ||
+            stats.pending !== pending ||
+            stats.inProgress !== inProgress ||
+            stats.resolved !== resolved ||
+            stats.critical !== critical
+        ) {
+            setStats({ total, pending, inProgress, resolved, critical });
+        }
     };
 
     // Handle filter changes
@@ -172,11 +203,19 @@ const AuthorityDashboard: React.FC = () => {
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    // Placeholder event handlers
-    const handleAssignTeam = (id: number) => alert(`Assign Team to Issue ID: ${id}`);
-    const handleChangeStatus = (id: number) => alert(`Change Status of Issue ID: ${id}`);
-    const handleAddNotes = (id: number) => alert(`Add Notes to Issue ID: ${id}`);
-    const handleDeleteIssue = (id: number) => alert(`Delete Issue ID: ${id}`);
+    const handleDeleteIssue = async () => {
+        try {
+            if (selectedId) {
+                await deleteIssue(selectedId).unwrap();
+                toast.success('Issue deleted successfully');
+                refetch();
+            }
+        } catch (error: any) {
+            toast.error(`${error.message || error.data.message}`);
+        } finally {
+            setModalDeleteVisibility(false);
+        }
+    };
 
     const customStyles = {
         control: (provided: any) => ({
@@ -254,7 +293,7 @@ const AuthorityDashboard: React.FC = () => {
                                 options={[
                                     { value: 'Road Maintenance', label: 'Road Maintenance' },
                                     { value: 'Waste Disposal', label: 'Waste Disposal' },
-                                    { value: 'Streetlight Repair', label: 'Streetlight Repair' },
+                                    { value: 'Streetlight Maintenance', label: 'Streetlight Maintenance' },
                                 ]}
                                 onChange={(e) => handleFilterChange('category', e?.value)}
                                 placeholder="Filter by Category"
@@ -282,7 +321,7 @@ const AuthorityDashboard: React.FC = () => {
                                 apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
                                 className={`form-control`}
                                 onPlaceSelected={(place) => {
-                                    handleFilterChange('location',  place.formatted_address || '');
+                                    handleFilterChange('location', place.formatted_address || '');
                                 }}
                                 options={{
                                     types: ['address'],
@@ -306,6 +345,15 @@ const AuthorityDashboard: React.FC = () => {
                             />
                         </Col>
                     </Row>
+
+                    <Modal isOpen={modalDeleteVisibility} toggle={() => toggleDeleteModal()}>
+                        <ModalHeader toggle={() => toggleDeleteModal()}>Delete Confirmation</ModalHeader>
+                        <ModalBody>Are you sure you want to delete?</ModalBody>
+                        <ModalFooter>
+                            <Button color="danger" onClick={handleDeleteIssue}>Delete</Button>
+                            <Button color="secondary" onClick={() => toggleDeleteModal()} outline>No</Button>
+                        </ModalFooter>
+                    </Modal>
                 </div>
             )}
         </>

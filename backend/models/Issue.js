@@ -3,14 +3,18 @@ const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const issueSchema = new mongoose.Schema({
   description: { type: String, required: true },
+  transcription: { type: String },
   photoUrl: { type: String },
   audioUrl: { type: String },
   address: { type: String, required: true },
   priority: { type: String, enum: ['Critical', 'Moderate', 'Low'], default: 'Moderate' },
-  category: { type: String, enum: ['Road Maintenance', 'Waste Disposal', 'Streetlight Repair'], default: '' },
-  status: { type: String, enum: ['Pending', 'In Progress', 'Resolved'], default: 'Pending' },
+  category: { type: String, enum: ['Road Maintenance', 'Waste Disposal', 'Streetlight Maintenance'], default: '' },
+  status: { type: String, enum: ['Pending', 'In Progress', 'Resolved', 'Closed'], default: 'Pending' },
+  team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  public_view: { type: String, enum: ['Approved', 'Rejected', 'Review'], default: 'Review' },
+  reason: { type: String },
 }, { timestamps: true });
 
 // Apply the auto-increment plugin to the `issueNumber` field

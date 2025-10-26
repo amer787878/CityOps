@@ -1,99 +1,88 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const path = require('path');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUI = require('swagger-ui-express');
-
+const express        = require('express');
+const http           = require('http');        
+const cookieParser   = require('cookie-parser');
+const bodyParser     = require('body-parser');
+const cors           = require('cors');
+const path           = require('path');
+const mongoose       = require('mongoose');
+const dotenv         = require('dotenv');
+const swaggerJsDoc   = require('swagger-jsdoc');
+const swaggerUI      = require('swagger-ui-express');
+const User    = require('./models/User'); 
 dotenv.config();
 
-const app = express();
-
 const PORT = process.env.PORT || 3009;
+const app  = express();             
+const httpServer = http.createServer(app); 
 
-// Connect to DB
+/* ── MongoDB ─────────────────────────────────────────────────────── */
 mongoose.connect(process.env.MONGO_URL)
-    .then(() => {
-        // Connection successful
-        console.log('👓 Connected to DB')
-    })
-    .catch((error) => {
-        // Handle connection error
-        console.log('Connection Error => : ', error.message)
-    });
+  .then(() => console.log('👓 Connected to DB'))
+  .catch(err => console.error('Connection Error →', err.message));
 
-// Import routes
-const authRoute = require('./routes/auth');
-const userRoute = require('./routes/users');
-const issueRoute = require('./routes/issues');
-const teamRoute = require('./routes/teams');
-const notificationRoute = require('./routes/notifications');
-const commentRoute = require('./routes/comments');
-const analyticRoute = require('./routes/analytics');
-const moderationRoute = require('./routes/moderation');
-
-// Increase parse limit
+/* ── Middleware ──────────────────────────────────────────────────── */
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, '/public')));
-
-// Middleware
-app.use(
-    cors({
-        credentials: true,
-        origin: [
-            'http://localhost:9000'
-        ],
-    }),
-);
-
 app.use(express.json());
 app.use(cookieParser());
 
-// Route middleware
-app.get('/', (req, res) => {
-    res.send('CityOps API Server is running!');
-});
+const ALLOWED_ORIGINS = [
+  'http://localhost:9000',
+  'https://localhost:9000',
+];
 
-app.use('/api/auth', authRoute);
-app.use('/api/users', userRoute);
-app.use('/api/issues', issueRoute);
-app.use('/api/teams', teamRoute);
-app.use('/api/notifications', notificationRoute);
-app.use('/api/comments', commentRoute);
-app.use('/api/analytics', analyticRoute);
-app.use('/api/moderation', moderationRoute);
+app.use(
+  cors({
+    credentials: true,
+    origin: ALLOWED_ORIGINS
+  })
+);
 
-// Extended: https://swagger.io/specification/#infoObject
+/* ── Routes ──────────────────────────────────────────────────────── */
+app.get('/', (req, res) => res.send('CityOps API Server is running!'));
+
+app.use('/api/auth',          require('./routes/auth'));
+app.use('/api/users',         require('./routes/users'));
+app.use('/api/issues',        require('./routes/issues'));
+app.use('/api/teams',         require('./routes/teams'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/comments',      require('./routes/comments'));
+app.use('/api/analytics',     require('./routes/analytics'));
+app.use('/api/moderation',    require('./routes/moderation'));
+app.use('/api/report',        require('./routes/report'));
+
+/* ── Swagger (unchanged) ─────────────────────────────────────────── */
 const swaggerOptions = {
-    failOnErrors: true,
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'CityOps API',
-            version: '1.0.0',
-            description: 'CityOps - Smart Urban Issue Reporting Platform'
-        },
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-              description: 'Enter your JWT token inside this field to authenticate your requests. The format should be: {your_token_here}'
-            }
-          }
-        },
-        security: [{
-          bearerAuth: []
-        }]
+  failOnErrors : true,
+  definition   : {
+    openapi : '3.0.0',
+    info    : {
+      title       : 'CityOps API',
+      version     : '1.0.0',
+      description : 'CityOps – Smart Urban Issue Reporting Platform'
     },
-    apis: ['./routes/*.js'], // Adjust the path to reflect where your route files are located
+    components : {
+      securitySchemes : {
+        bearerAuth : {
+          type          : 'http',
+          scheme        : 'bearer',
+          bearerFormat  : 'JWT',
+          description   : 'Enter JWT token here.'
+        }
+      }
+    },
+    security : [ { bearerAuth: [] } ]
+  },
+  apis: ['./routes/*.js']
 };
-
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
-app.listen(PORT, () => console.log(`🛺  API Server UP and Running at ${process.env.SERVER_URL}`));
+/* ── Export for tests & start server ─────────────────────────────── */
+module.exports = { app, httpServer };
+
+if (process.env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () =>
+    console.log(`🛺  API & WS listening on http://localhost:${PORT}`)
+  );
+}

@@ -1,59 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect } from 'react';
-import { Col, Row, Button, Form, FormGroup, Card, CardBody } from 'reactstrap';
+import { Col, Row, Card, CardBody } from 'reactstrap';
 import { useParams } from 'react-router-dom';
-import { IComment } from '../redux/api/types';
-import { useGetIssueQuery, usePostCommentMutation } from '../redux/api/issueAPI';
-import { SubmitHandler, useForm } from 'react-hook-form';
-import classnames from 'classnames';
+import { useGetExploreIssueQuery } from '../redux/api/issueAPI';
 import FullScreenLoader from '../components/FullScreenLoader';
 import userImg from '../assets/images/user.png';
 import { getDateFormat } from '../utils/Utils';
-import { toast } from "react-toastify";
 
-const IssueDetails: React.FC = () => {
+const ExploreIssueDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { data: issue, refetch: refetchIssue, isLoading } = useGetIssueQuery(id ?? '', {
+    const { data: issue, refetch: refetchIssue, isLoading } = useGetExploreIssueQuery(id ?? '', {
         skip: !id,
     });
-    const [postComment, { isError, error, isSuccess, data }] = usePostCommentMutation();
-
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<IComment>();
 
     useEffect(() => {
         refetchIssue();
     }, [refetchIssue]);
-
-    const onSubmit: SubmitHandler<IComment> = async (formData) => {
-        formData.issueId = id ?? "";
-        formData.notificationType = "New Comment";
-        await postComment(formData);
-        refetchIssue();
-    };
-
-    useEffect(() => {
-        if (isSuccess) {
-            toast.success(data?.message || "Comment posted successfully!");
-        }
-
-        if (isError) {
-            const errorData = (error as any)?.data?.error;
-            if (Array.isArray(errorData)) {
-                errorData.forEach((el: any) =>
-                    toast.error(el.message, { position: "top-right" })
-                );
-            } else {
-                toast.error(
-                    (error as any)?.data?.message || "An unexpected error occurred!",
-                    { position: "top-right" }
-                );
-            }
-        }
-    }, [isSuccess, isError]);
 
     if (isLoading) {
         return (<FullScreenLoader />);
@@ -126,35 +88,6 @@ const IssueDetails: React.FC = () => {
                                     </div>
                                 ))}
                             </>
-                            <div className='mt-4'>
-                                <Form onSubmit={handleSubmit(onSubmit)}>
-                                    <FormGroup>
-                                        <textarea
-                                            id="content"
-                                            className={`form-control ${classnames({ 'is-invalid': errors.content })}`}
-                                            {...register('content', {
-                                                required: 'Comment is required.',
-                                                minLength: {
-                                                    value: 10,
-                                                    message: 'Comment must be at least 10 characters long.'
-                                                },
-                                                maxLength: {
-                                                    value: 500,
-                                                    message: 'Comment must be less than 500 characters long.'
-                                                }
-                                            })}
-                                            rows={4}
-                                            placeholder="Write your comment here..."
-                                        ></textarea>
-                                        {errors.content && (
-                                            <small className="text-danger">{errors.content.message}</small>
-                                        )}
-                                    </FormGroup>
-                                    <Button color="primary" type="submit">
-                                        Submit Comment
-                                    </Button>
-                                </Form>
-                            </div>
 
                         </Col>
                     </Row>
@@ -165,4 +98,4 @@ const IssueDetails: React.FC = () => {
     );
 };
 
-export default IssueDetails;
+export default ExploreIssueDetail;

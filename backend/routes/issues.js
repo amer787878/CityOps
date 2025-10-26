@@ -3,8 +3,16 @@ const { body, validationResult } = require('express-validator');
 const multer = require("multer");
 const mongoose = require('mongoose');
 const Issue = require('../models/Issue');
-const { classifyIssue } = require('../utils/utils');
+const User = require('../models/User');
+const fs = require('fs');
+const path = require('path');
 const verifyToken = require('../utils/verifyToken');
+const { classifyIssue } = require('../utils/openaiClient');
+const { OpenAI } = require('openai');
+
+const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
@@ -97,6 +105,7 @@ const upload = multer({
  */
 router.get(
     '/',
+    verifyToken(['Admin', 'Citizen', 'Authority']),
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -104,19 +113,30 @@ router.get(
         }
 
         try {
-            const priorityFilter = req.query.priority !== '' && typeof req.query.priority !== 'undefined' ? { priority: req.query.priority } : {};
-            const statusFilter = req.query.status !== '' && typeof req.query.status !== 'undefined' ? { status: req.query.status } : {};
-            const categoryFilter = req.query.category !== '' && typeof req.query.category !== 'undefined' ? { category: req.query.category } : {};
-            const addressFilter = req.query.location !== '' && typeof req.query.location !== 'undefined' ? { address: req.query.location } : {};
+            const priorityFilter = req.query.priority ? { priority: req.query.priority } : {};
+            const statusFilter = req.query.status ? { status: req.query.status } : {};
+            const categoryFilter = req.query.category ? { category: req.query.category } : {};
+            const addressFilter = req.query.location ? { address: { $regex: req.query.location, $options: 'i' } } : {};
+
+            let userFilter = {};
+
+            if (req.user.role === 'Authority') {
+                // Fetch all citizens linked to this authority
+                const citizens = await User.find({ authority: req.user._id }).select('_id');
+
+                // Ensure issues are only from the authority’s citizens
+                userFilter = { createdBy: { $in: citizens.map(citizen => citizen._id) } };
+            }
+
             const filterParams = {
                 $and: [
                     statusFilter,
                     priorityFilter,
                     categoryFilter,
-                    addressFilter
+                    addressFilter,
+                    userFilter
                 ],
             };
-
             // Fetch issues, projecting upvote count
             const issues = await Issue.aggregate([
                 { $match: filterParams },
@@ -134,6 +154,63 @@ router.get(
             ]);
 
             return res.status(200).json(issues);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'An error occurred while fetching issues.' });
+        }
+    }
+);
+
+router.get(
+    '/explore-issues',
+    async (req, res) => {
+        try {
+            const { page = 1, limit = 10, priority, status, category, location } = req.query;
+
+            // Parse page and limit as numbers
+            const pageNumber = parseInt(page, 10) || 1;
+            const limitNumber = parseInt(limit, 10) || 10;
+
+            // Build filters
+            const priorityFilter = priority ? { priority } : {};
+            const statusFilter = status ? { status } : {};
+            const categoryFilter = category ? { category } : {};
+            const addressFilter = location ? { address: { $regex: location, $options: 'i' } } : {};
+
+            const filterParams = {
+                $and: [statusFilter, priorityFilter, categoryFilter, addressFilter],
+            };
+
+            // Calculate total count for pagination
+            const totalCount = await Issue.countDocuments(filterParams);
+
+            // Fetch paginated issues
+            const issues = await Issue.aggregate([
+                { $match: filterParams },
+                {
+                    $addFields: {
+                        upvoteCount: { $size: { $ifNull: ['$upvotes', []] } },
+                    },
+                },
+                { $sort: { createdAt: -1 } },
+                { $skip: (pageNumber - 1) * limitNumber },
+                { $limit: limitNumber },
+                {
+                    $project: {
+                        __v: 0, // Exclude the version key
+                    },
+                },
+            ]);
+
+            // Calculate total pages
+            const totalPages = Math.ceil(totalCount / limitNumber);
+
+            return res.status(200).json({
+                data: issues,
+                totalPages,
+                currentPage: pageNumber,
+                totalCount,
+            });
         } catch (err) {
             console.error(err);
             return res.status(500).json({ error: 'An error occurred while fetching issues.' });
@@ -229,16 +306,22 @@ router.get(
         }
 
         try {
-            const priorityFilter = req.query.priority !== '' && typeof req.query.priority !== 'undefined' ? { priority: req.query.priority } : {};
-            const statusFilter = req.query.status !== '' && typeof req.query.status !== 'undefined' ? { status: req.query.status } : {};
-            const categoryFilter = req.query.category !== '' && typeof req.query.category !== 'undefined' ? { category: req.query.category } : {};
+            const priorityFilter = req.query.priority
+                ? { priority: req.query.priority }
+                : {};
+            const statusFilter = req.query.status
+                ? { status: req.query.status }
+                : {};
+            const addressFilter = req.query.address
+                ? { address: { $regex: req.query.address, $options: 'i' } }
+                : {};
 
             const filterParams = {
                 $and: [
                     { createdBy: new mongoose.Types.ObjectId(req.user._id) },
-                    statusFilter,
                     priorityFilter,
-                    categoryFilter,
+                    statusFilter,
+                    addressFilter,
                 ],
             };
 
@@ -247,15 +330,15 @@ router.get(
                 { $match: filterParams },
                 {
                     $addFields: {
-                        upvoteCount: { $size: { $ifNull: ['$upvotes', []] } }
-                    }
+                        upvoteCount: { $size: { $ifNull: ['$upvotes', []] } },
+                    },
                 },
                 { $sort: { createdAt: -1 } },
                 {
                     $project: {
-                        __v: 0 // Exclude the version key
-                    }
-                }
+                        __v: 0, // Exclude the version key
+                    },
+                },
             ]);
 
             return res.status(200).json(issues);
@@ -265,7 +348,6 @@ router.get(
         }
     }
 );
-
 
 /**
  * @swagger
@@ -335,9 +417,18 @@ router.post(
         }
 
         try {
-            const { description, address, category } = req.body;
-            const photoUrl = req.files.photo ? process.env.SERVER_URL + '/' + req.files.photo[0].path.replace(/\\/g, '/').replace('public/', '') : null;
-            const audioUrl = req.files.audio ? process.env.SERVER_URL + '/' + req.files.audio[0].path.replace(/\\/g, '/').replace('public/', '') : null;
+            const { description, address, category, priority } = req.body;
+
+            const photoFile = req.files.photo ? req.files.photo[0] : null;
+            const audioFile = req.files.audio ? req.files.audio[0] : null;
+
+            const photoUrl = photoFile
+            ? '/' + photoFile.path.replace(/\\/g, '/').replace(/^public\//, '')
+            : null;
+
+            const audioUrl = audioFile
+            ? '/' + audioFile.path.replace(/\\/g, '/').replace(/^public\//, '')
+            : null;
 
             // Ensure at least one input is provided
             if (!description && !photoUrl && !audioUrl) {
@@ -346,16 +437,15 @@ router.post(
                 });
             }
 
-            // AI processing for classification and priority
-            const classification = await classifyIssue(description || '', address);
 
             const newIssue = new Issue({
-                description,
+                description: description,
+                transcription: description,
                 photoUrl,
                 audioUrl,
                 address,
                 category,
-                priority: classification.priority || 'Moderate',
+                priority,
                 createdBy: req.user._id
             });
 
@@ -365,8 +455,7 @@ router.post(
 
             res.status(201).json({
                 message: 'Issue submitted successfully.',
-                issue: savedIssue,
-                classification
+                issue: savedIssue
             });
         } catch (err) {
             console.error(err);
@@ -374,6 +463,70 @@ router.post(
         }
     }
 );
+
+router.post('/generate-ai', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'audio', maxCount: 1 }]), async (req, res) => {
+    try {
+        const { description } = req.body;
+        const photo = req.files.photo ? req.files.photo[0] : null;
+        const audio = req.files.audio ? req.files.audio[0] : null;
+
+        let contentToProcess = description || '';  // Default to the description if provided
+
+        // Process audio if it's provided
+        if (audio) {
+            const audioFile = fs.createReadStream(audio.path);
+            const transcriptionResponse = await client.audio.transcriptions.create({
+                file: audioFile,
+                model: "whisper-1",
+                language: "en",
+            });
+            contentToProcess = transcriptionResponse.text.trim();
+        }
+
+        if (photo) {
+            // Mock description for the photo (replace with actual photo analysis logic)
+            contentToProcess += ' The image provided contains some important details related to the issue.';
+        }
+
+        const messages = [
+            {
+                role: 'system',
+                content: 'You are an assistant that classifies urban issues and assigns priority levels. Respond ONLY with valid minified JSON and NO other text. You are JSON API',
+            },
+            {
+                role: 'user',
+                content: `
+                    Based on the following information, provide a detailed description and assign a priority level:
+                    Priority levels are Critical, Moderate, and Low.
+                    Information: "${contentToProcess}"
+                    Respond in JSON format:
+                    {
+                      "description": "<Detailed Description>",
+                      "priority": "<Priority>"
+                    }
+                `,
+            },
+        ];
+
+        const classificationResponse = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0,
+        max_tokens: 200,
+        response_format: { type: "json_object" },   // <── enforces pure JSON
+        });
+
+        const aiResponse = JSON.parse(classificationResponse.choices[0].message.content.trim());
+
+        res.status(200).json({
+            description: aiResponse.description || 'No description generated.',
+            priority: aiResponse.priority || 'Moderate',
+        });
+    } catch (error) {
+        console.error('Error processing AI generation:', error.message);
+        res.status(500).json({ error: 'Failed to generate description and priority.' });
+    }
+});
 
 /**
  * @swagger
@@ -403,6 +556,12 @@ router.post(
  *         schema:
  *           type: string
  *       - in: formData
+ *         name: category
+ *         required: false
+ *         description: Updated category of the issue
+ *         schema:
+ *           type: string
+ *       - in: formData
  *         name: photo
  *         required: false
  *         description: Updated photo file
@@ -419,25 +578,12 @@ router.post(
  *         description: Issue updated successfully
  *       400:
  *         description: Bad request, invalid input
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       msg:
- *                         type: string
- *                       param:
- *                         type: string
  *       404:
  *         description: Issue not found
  *       500:
  *         description: Internal server error
  */
+
 router.put(
     '/update/:id',
     upload.fields([
@@ -445,18 +591,10 @@ router.put(
         { name: 'audio', maxCount: 1 },
     ]),
     [
-        body('description')
-            .optional()
-            .isString()
-            .withMessage('Description must be a string.')
-            .isLength({ max: 500 })
-            .withMessage('Description must be less than 500 characters.'),
-        body('address')
-            .optional()
-            .notEmpty()
-            .withMessage('Address cannot be empty if provided.'),
+        body('description').optional().isString().withMessage('Description must be a string.'),
+        body('address').optional().notEmpty().withMessage('Address cannot be empty if provided.'),
     ],
-    verifyToken(['Citizen']),
+    verifyToken(['Citizen', 'Authority']),
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -465,28 +603,27 @@ router.put(
 
         try {
             const issueId = req.params.id;
-            const { description, address, category } = req.body;
+            const { description, address, category, priority } = req.body;
+
+            const photoFile = req.files?.photo ? req.files.photo[0] : null;
+            const audioFile = req.files?.audio ? req.files.audio[0] : null;
+
+            const photoUrl = photoFile
+                ? process.env.SERVER_URL + '/' + photoFile.path.replace(/\\/g, '/').replace('public/', '')
+                : null;
+            const audioUrl = audioFile
+                ? process.env.SERVER_URL + '/' + audioFile.path.replace(/\\/g, '/').replace('public/', '')
+                : null;
 
             const updateFields = {};
             if (description) updateFields.description = description;
             if (address) updateFields.address = address;
             if (category) updateFields.category = category;
+            if (photoUrl) updateFields.photoUrl = photoUrl;
+            if (audioUrl) updateFields.audioUrl = audioUrl;
+            if (priority) updateFields.priority = priority;
 
-            // File handling for optional updates
-            if (req.files && req.files.photo) {
-                updateFields.photoUrl =
-                    process.env.SERVER_URL +
-                    '/' +
-                    req.files.photo[0].path.replace(/\\/g, '/').replace('public/', '');
-            }
-            if (req.files && req.files.audio) {
-                updateFields.audioUrl =
-                    process.env.SERVER_URL +
-                    '/' +
-                    req.files.audio[0].path.replace(/\\/g, '/').replace('public/', '');
-            }
-
-            // Validate that at least one field is being updated
+            // Ensure at least one field is being updated
             if (Object.keys(updateFields).length === 0) {
                 return res.status(400).json({
                     error: 'At least one field (description, address, photo, or audio) must be provided for the update.',
@@ -494,10 +631,7 @@ router.put(
             }
 
             // Find and update the issue
-            const updatedIssue = await Issue.findByIdAndUpdate(issueId, updateFields, {
-                new: true,
-            });
-
+            const updatedIssue = await Issue.findByIdAndUpdate(issueId, updateFields, { new: true });
             if (!updatedIssue) {
                 return res.status(404).json({ error: 'Issue not found.' });
             }
@@ -512,7 +646,6 @@ router.put(
         }
     }
 );
-
 
 /**
  * @swagger
@@ -593,7 +726,9 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
             return res.status(400).send('Malformed issue ID');
         }
 
-        // Use aggregation to fetch the issue with comments and their creators
+        const userId = req.user._id; // Get the user ID from the token (assumed to be in req.user)
+
+        // Use aggregation to fetch the issue with comments, their creators, and team details
         const issueData = await Issue.aggregate([
             {
                 $match: { _id: new mongoose.Types.ObjectId(id) }, // Match the issue by ID
@@ -613,6 +748,7 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
                                 _id: 1,
                                 fullname: 1,
                                 email: 1,
+                                role: 1,
                             },
                         },
                     ],
@@ -648,6 +784,200 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
                                 _id: 1,
                                 fullname: 1,
                                 email: 1,
+                                role: 1,
+                            },
+                        },
+                    ],
+                    as: 'commentCreators', // Output array field
+                },
+            },
+            {
+                $addFields: {
+                    comments: {
+                        $map: {
+                            input: '$commentDetails',
+                            as: 'comment',
+                            in: {
+                                _id: '$$comment._id',
+                                content: '$$comment.content',
+                                createdAt: '$$comment.createdAt',
+                                createdBy: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: '$commentCreators',
+                                                as: 'creator',
+                                                cond: { $eq: ['$$creator._id', '$$comment.createdBy'] },
+                                            },
+                                        },
+                                        0,
+                                    ],
+                                },
+                                status: '$$comment.status', // Include status
+                                reason: '$$comment.reason', // Include reason
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                // Only return "Pending" comments if the user is the owner of the comment
+                $addFields: {
+                    comments: {
+                        $map: {
+                            input: '$comments',
+                            as: 'comment',
+                            in: {
+                                $cond: {
+                                    if: { $eq: ['$$comment.status', 'Pending'] },
+                                    then: {
+                                        $cond: {
+                                            if: { $eq: ['$$comment.createdBy._id', new mongoose.Types.ObjectId(userId)] },
+                                            then: '$$comment',
+                                            else: null,
+                                        },
+                                    },
+                                    else: '$$comment',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                // Remove null values from the comments array
+                $addFields: {
+                    comments: {
+                        $filter: {
+                            input: '$comments',
+                            as: 'comment',
+                            cond: { $ne: ['$$comment', null] },
+                        },
+                    },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'teams', // Name of the Team collection
+                    localField: 'team', // Match the Issue's team field
+                    foreignField: '_id',
+                    as: 'teamDetails',
+                },
+            },
+            {
+                $unwind: {
+                    path: '$teamDetails',
+                    preserveNullAndEmptyArrays: true, // Handle cases where team details might be missing
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    description: 1,
+                    photoUrl: 1,
+                    audioUrl: 1,
+                    address: 1,
+                    priority: 1,
+                    status: 1,
+                    issueNumber: 1,
+                    category: 1,
+                    createdBy: '$createdByDetails',
+                    comments: 1,
+                    transcription: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    team: {
+                        _id: '$teamDetails._id',
+                        name: '$teamDetails.name',
+                        image: '$teamDetails.image',
+                        category: '$teamDetails.category',
+                        availability: '$teamDetails.availability',
+                        teamNumber: '$teamDetails.teamNumber',
+                    }, // Include the team details
+                },
+            },
+        ]);
+
+        // If no issue is found, return an error
+        if (!issueData || issueData.length === 0) {
+            return res.status(404).send('Issue not found');
+        }
+
+        // Return the first issue in the result (since IDs are unique)
+        return res.status(200).json(issueData[0]);
+    } catch (error) {
+        console.error('Error fetching issue:', error);
+        return res.status(500).send('Internal Server Error');
+    }
+});
+
+
+router.get('/explore/getOneIssue/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate the issue ID
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).send('Malformed issue ID');
+        }
+
+        // Use aggregation to fetch the issue with comments, their creators, and team details
+        const issueData = await Issue.aggregate([
+            {
+                $match: { _id: new mongoose.Types.ObjectId(id) }, // Match the issue by ID
+            },
+            {
+                $lookup: {
+                    from: 'users', // Name of the User collection
+                    let: { creatorId: '$createdBy' }, // Pass the createdBy field
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ['$_id', '$$creatorId'] }, // Match the User ID
+                            },
+                        },
+                        {
+                            $project: { // Select only required fields
+                                _id: 1,
+                                fullname: 1,
+                                email: 1,
+                                role: 1,
+                            },
+                        },
+                    ],
+                    as: 'createdByDetails', // Output array field
+                },
+            },
+            {
+                $unwind: {
+                    path: '$createdByDetails',
+                    preserveNullAndEmptyArrays: true, // Handle cases where creator details might be missing
+                },
+            },
+            {
+                $lookup: {
+                    from: 'comments', // Name of the Comment collection
+                    localField: '_id', // Match the Issue ID with the `issue` field in the Comment collection
+                    foreignField: 'issue',
+                    as: 'commentDetails',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users', // Name of the User collection
+                    let: { commentCreatorIds: '$commentDetails.createdBy' }, // Pass the createdBy field
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $in: ['$_id', '$$commentCreatorIds'] }, // Match User IDs in the list
+                            },
+                        },
+                        {
+                            $project: { // Select only required fields
+                                _id: 1,
+                                fullname: 1,
+                                email: 1,
+                                role: 1,
                             },
                         },
                     ],
@@ -682,6 +1012,20 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
                 },
             },
             {
+                $lookup: {
+                    from: 'teams', // Name of the Team collection
+                    localField: 'team', // Match the Issue's team field
+                    foreignField: '_id',
+                    as: 'teamDetails',
+                },
+            },
+            {
+                $unwind: {
+                    path: '$teamDetails',
+                    preserveNullAndEmptyArrays: true, // Handle cases where team details might be missing
+                },
+            },
+            {
                 $project: {
                     _id: 1,
                     description: 1,
@@ -692,10 +1036,19 @@ router.get('/getOneIssue/:id', verifyToken(['Admin', 'Authority', 'Citizen']), a
                     status: 1,
                     issueNumber: 1,
                     category: 1,
-                    createdBy: '$createdByDetails', // Include the formatted `createdBy` details
-                    comments: 1, // Include the updated `comments` array
+                    createdBy: '$createdByDetails',
+                    comments: 1,
+                    transcription: 1,
                     createdAt: 1,
                     updatedAt: 1,
+                    team: {
+                        _id: '$teamDetails._id',
+                        name: '$teamDetails.name',
+                        image: '$teamDetails.image',
+                        category: '$teamDetails.category',
+                        availability: '$teamDetails.availability',
+                        teamNumber: '$teamDetails.teamNumber',
+                    }, // Include the team details
                 },
             },
         ]);
@@ -860,5 +1213,112 @@ router.get(
         }
     }
 );
+
+router.put('/assignTeam/:issueId', verifyToken(['Admin', 'Authority', 'Citizen']), async (req, res) => {
+    const issueId = req.params.issueId;
+    const { teamId } = req.body;
+    if (!mongoose.isValidObjectId(issueId)) {
+        return res.status(400).send({ message: 'Malformed issue ID' });
+    }
+
+    try {
+        const issue = await Issue.findById(issueId);
+
+        if (!issue) {
+            return res.status(404).send({ message: 'Issue not found' });
+        }
+        issue.team = teamId;
+
+        await issue.save();
+
+        return res.status(200).send({ message: 'Team successfully assigned' });
+    } catch (error) {
+        return res.status(500).send({ message: error.message });
+    }
+});
+
+router.put('/updateStatus/:issueId', verifyToken(['Admin', 'Authority', 'Citizen']), async (req, res) => {
+    const issueId = req.params.issueId;
+    const { status } = req.body;
+    if (!mongoose.isValidObjectId(issueId)) {
+        return res.status(400).send({ message: 'Malformed issue ID' });
+    }
+
+    try {
+        const issue = await Issue.findById(issueId);
+
+        if (!issue) {
+            return res.status(404).send({ message: 'Issue not found' });
+        }
+        issue.status = status;
+
+        await issue.save();
+
+        return res.status(200).send({ message: 'Status successfully updated' });
+    } catch (error) {
+        return res.status(500).send({ message: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/issues/delete/{id}:
+ *   delete:
+ *     summary: Delete an issue
+ *     description: Deletes an issue by its ID. Requires authentication with roles Admin, Authority, or Citizen.
+ *     tags:
+ *       - Issues
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the issue to delete
+ *     responses:
+ *       200:
+ *         description: Issue successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Issue successfully deleted!
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ *       404:
+ *         description: Issue not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Issue not found
+ */
+router.delete('/delete/:id', verifyToken(['Admin', 'Authority', 'Citizen']), async (req, res) => {
+    try {
+        const issue = await Issue.findById(req.params.id);
+        if (!issue) {
+            return res.status(404).send({ message: 'Issue not found' });
+        }
+        await Issue.deleteOne({ _id: req.params.id });
+        return res.send({ message: 'Issue successfully deleted!' });
+    } catch (error) {
+        return res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
 
 module.exports = router;

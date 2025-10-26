@@ -207,7 +207,7 @@ const AuthorityAnalytics: React.FC = () => {
                                         <option value="">All</option>
                                         <option value="Road Maintenance">Road Maintenance</option>
                                         <option value="Waste Disposal">Waste Disposal</option>
-                                        <option value="Streetlight Repair">Streetlight Repair</option>
+                                        <option value="Streetlight Maintenance">Streetlight Maintenance</option>
                                     </Input>
                                 </FormGroup>
                                 <Button type="submit" color="primary" block>

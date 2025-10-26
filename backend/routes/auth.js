@@ -99,36 +99,65 @@ const authConfig = {
  */
 
 router.post('/register', async (req, res) => {
-
-    // check for unique user
-    const emailExists = await User.findOne({ email: req.body.email });
-    if (emailExists) { return res.status(400).send({ message: 'This Email already exists.' }); }
-
-    // hash the password
-    const salt = await bcrypt.genSalt(saltLength);
-    const hashPassword = await bcrypt.hash(req.body.password, salt);
-
-    const user = new User({
-        fullname: req.body.fullname,
-        email: req.body.email,
-        password: hashPassword,
-        role: req.body.role,
-    });
-
-    // create an access token
-    const accessToken = jwt.sign({ _id: user._id }, process.env.AUTH_TOKEN_SECRET, { expiresIn: authConfig.expireTime });
-
     try {
+        const { fullname, email, password, role, authority } = req.body;
+
+        // Check if email already exists
+        const emailExists = await User.findOne({ email });
+        if (emailExists) {
+            return res.status(400).json({ message: 'This Email already exists.' });
+        }
+
+        // Validate Citizen role requires Authority
+        if (role === 'Citizen' && !authority) {
+            return res.status(400).json({ message: 'Citizen must select an Authority.' });
+        }
+
+        // Validate that provided Authority exists
+        if (role === 'Citizen') {
+            const authorityExists = await User.findOne({ _id: authority, role: 'Authority' });
+            if (!authorityExists) {
+                return res.status(400).json({ message: 'Invalid Authority selected.' });
+            }
+        }
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(saltLength);
+        const hashPassword = await bcrypt.hash(password, salt);
+
+        // Create new user
+        const user = new User({
+            fullname,
+            email,
+            password: hashPassword,
+            role,
+            authority: role === 'Citizen' ? authority : undefined, // Only store if Citizen
+        });
+
+        // Save user to database
         const savedUser = await user.save();
 
-        // remove password
-        delete savedUser._doc.password;
+        // Create access token
+        const accessToken = jwt.sign(
+            { _id: savedUser._id, role: savedUser.role },
+            process.env.AUTH_TOKEN_SECRET,
+            { expiresIn: authConfig.expireTime }
+        );
 
-        return res.send({ user: savedUser, accessToken, message: 'User successfully registered' });
+        // Remove password before sending response
+        const { password: _, ...userData } = savedUser._doc;
+
+        return res.json({
+            user: userData,
+            accessToken,
+            message: 'User successfully registered',
+        });
+
     } catch (err) {
-        return res.status(400).send({ message: err });
+        return res.status(500).json({ message: 'Internal Server Error', error: err.message });
     }
 });
+
 
 /**
  * @openapi

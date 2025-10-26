@@ -28,9 +28,9 @@ router.get('/authority', async (req, res) => {
         // Resolved Issues This Month
         const resolvedIssuesThisMonth = await Issue.countDocuments({
             ...matchFilters,
-            status: 'Resolved',
+            status: { $in: ['Resolved', 'Closed'] },  // Corrected to match both "Resolved" and "Closed"
             createdAt: {
-                $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Start of the current month
+                $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),  // Start of the current month
             },
         });
 

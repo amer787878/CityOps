@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import defaultFetchBase from './defaultFetchBase';
-import { ITeam, IUser } from './types';
+import { ITeam } from './types';
 
 export const teamAPI = createApi({
     reducerPath: 'teamAPI',
@@ -64,21 +64,6 @@ export const teamAPI = createApi({
             transformResponse: (response: ITeam[]) => response,
         }),
 
-        getTeamMembers: builder.query<IUser[], void>({
-            query: () => ({
-                url: '/teams/getTeamMembers',
-                credentials: 'include',
-            }),
-            providesTags: (result) =>
-                result
-                    ? [
-                        ...result.map(({ _id }) => ({ type: 'Teams' as const, id: _id })),
-                        { type: 'Teams', id: 'LIST' },
-                    ]
-                    : [{ type: 'Teams', id: 'LIST' }],
-            transformResponse: (response: IUser[]) => response,
-        }),
-
         deleteTeam: builder.mutation<any, string>({
             query(id) {
                 return {
@@ -99,5 +84,4 @@ export const {
     useGetTeamQuery,
     useGetTeamsQuery,
     useDeleteTeamMutation,
-    useGetTeamMembersQuery,
 } = teamAPI;

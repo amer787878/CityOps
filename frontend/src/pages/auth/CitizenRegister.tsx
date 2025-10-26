@@ -4,7 +4,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import classnames from 'classnames';
 import { toast } from 'react-toastify';
-import { useRegisterUserMutation } from '../../redux/api/authAPI';
+import { useGetAuthoritiesQuery, useRegisterUserMutation } from '../../redux/api/authAPI';
 import { useEffect } from 'react';
 import logoImg from "../../assets/images/logo.png";
 import CustomerSVG from '../../assets/images/customerHero';
@@ -18,6 +18,11 @@ const CitizenRegister: React.FC = () => {
     } = useForm<RegisterUserRequest>();
     const [registerUser, { isLoading, isSuccess, error, isError, data }] = useRegisterUserMutation();
     const navigate = useNavigate();
+    const { data: authorities, refetch } = useGetAuthoritiesQuery({});
+
+    useEffect(() => {
+        refetch();
+    }, [refetch])
 
     const password = watch('password'); // Watch the password field
 
@@ -118,6 +123,24 @@ const CitizenRegister: React.FC = () => {
                                 )}
                             </FormGroup>
 
+                            <FormGroup>
+                                <Label className="form-label" for="authority">
+                                    Select Authority
+                                </Label>
+                                <select
+                                    id="authority"
+                                    className={`form-control ${classnames({ 'is-invalid': errors.authority })}`}
+                                    {...register('authority', { required: true })}
+                                >
+                                    <option value="">Select an Authority</option>
+                                    {authorities?.map((authority: any) => (
+                                        <option key={authority._id} value={authority._id}>
+                                            {authority.fullname}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.authority && <small className="text-danger">Authority is required.</small>}
+                            </FormGroup>
 
                             <FormGroup>
                                 <Label className="form-label" for="password">

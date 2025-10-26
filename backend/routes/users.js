@@ -112,6 +112,11 @@ router.get('/', verifyToken(['Admin', 'Citizen', 'Authority']), async (req, res)
     })
 });
 
+router.get('/authorities', async (req, res) => {
+    const authorities = await User.find({ role: "Authority" }).select('-password -__v');
+    return res.send(authorities);
+});
+
 /**
  * @openapi
  * /api/users/logout:

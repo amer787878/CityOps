@@ -47,6 +47,7 @@ const IssueUpdate: React.FC = () => {
         if (issueData) {
             setValue('description', issueData.description);
             setValue('category', issueData.category);
+            setValue('priority', issueData.priority);
             setAddress(issueData.address);
         }
     }, [issueData]);
@@ -69,6 +70,7 @@ const IssueUpdate: React.FC = () => {
             if (audio) submissionData.append('audio', audio);
             submissionData.append('address', address);
             submissionData.append('category', data.category);
+            submissionData.append('priority', data.priority);
 
             await updateIssue({ id, issue: submissionData });
         } catch (error) {
@@ -80,7 +82,7 @@ const IssueUpdate: React.FC = () => {
     useEffect(() => {
         if (isSuccess) {
             toast.success('Issue updated successfully!');
-            navigate('/citizen/my-issues');
+            navigate('/authority/dashboard');
         }
         if (isError) {
             const errorData = (error as any)?.data?.error;
@@ -120,8 +122,8 @@ const IssueUpdate: React.FC = () => {
                                                 message: 'Description must be at least 10 characters long.'
                                             },
                                             maxLength: {
-                                                value: 500,
-                                                message: 'Description must be less than 500 characters long.'
+                                                value: 5000,
+                                                message: 'Description must be less than 5000 characters long.'
                                             }
                                         })}
                                     ></textarea>
@@ -192,7 +194,7 @@ const IssueUpdate: React.FC = () => {
                                         <option value="Road Maintenance">Road Maintenance</option>
                                         <option value="Waste Disposal">Waste Disposal</option>
                                         <option value="Streetlight Maintenance">Streetlight Maintenance</option>
-                                        
+
                                     </select>
 
                                     {errors.category && (
@@ -201,7 +203,28 @@ const IssueUpdate: React.FC = () => {
                                 </FormGroup>
                             </Col>
                         </Row>
+                        <Row>
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label for="priority">Priority</Label>
+                                    <select
+                                        className={`form-control ${classnames({
+                                            'is-invalid': errors.priority,
+                                        })}`}
+                                        {...register('priority', { required: 'Priority is required.' })}
+                                    >
+                                        <option value="">Select...</option>
+                                        <option value="Critical">Critical</option>
+                                        <option value="Moderate">Moderate</option>
+                                        <option value="Low">Low</option>
+                                    </select>
 
+                                    {errors.priority && (
+                                        <small className="text-danger">{errors.priority.message}</small>
+                                    )}
+                                </FormGroup>
+                            </Col>
+                        </Row>
                         {/* Buttons */}
                         <Row className="mt-4">
                             <Col>

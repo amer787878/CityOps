@@ -56,7 +56,6 @@ const AuthorityNotifications: React.FC = () => {
     }, [type, dateRange]);
 
     const handleMarkAsRead = async (id: string) => {
-        console.log(id)
         await readMarkNotification(id);
     };
 
@@ -114,7 +113,7 @@ const AuthorityNotifications: React.FC = () => {
     const columns: TableColumn<any>[] = [
         {
             name: "Content",
-            selector: (row) => row.message,
+            selector: row => row.message?.length > 30 ? `${row.message.slice(0, 30)}...` : row.message,
             sortable: true,
         },
         {

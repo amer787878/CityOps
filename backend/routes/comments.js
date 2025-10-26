@@ -49,7 +49,7 @@ const router = require('express').Router();
  *       500:
  *         description: Server error occurred while commenting.
  */
-router.post('/postComment', verifyToken(['Citizen']), async (req, res) => {
+router.post('/postComment', verifyToken(['Citizen', 'Admin', 'Authority']), async (req, res) => {
     try {
         const issue = await Issue.findById(req.body.issueId);
         const userId = req.user._id;
@@ -61,6 +61,7 @@ router.post('/postComment', verifyToken(['Citizen']), async (req, res) => {
             content: req.body.content,
             createdBy: req.user._id,
             issue: req.body.issueId,
+            status: "Pending"
         })
 
         const notification = new Notification({

@@ -11,7 +11,6 @@ const AuthorityTeamAssign: React.FC = () => {
     const navigate = useNavigate();
 
     const { data: issues, refetch, isLoading } = useGetTeamIssuesQuery({});
-    console.log(issues);
 
     useEffect(() => {
         refetch();

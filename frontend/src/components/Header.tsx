@@ -89,11 +89,11 @@ const Header: React.FC = () => {
                         {!user && (
                             <>
                                 <Nav className="ms-auto" navbar>
-                                    <NavItem className="nav-item-responsive">
+                                    {/* <NavItem className="nav-item-responsive">
                                         <NavLink onClick={() => { navigate('/explore-issues'); mobileToggle(); }}>
                                             Explore Issues
                                         </NavLink>
-                                    </NavItem>
+                                    </NavItem> */}
                                     <UncontrolledDropdown nav inNavbar>
                                         <DropdownToggle nav caret>
                                             <img src={userImg} alt="user" className="user-img" />

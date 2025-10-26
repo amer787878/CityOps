@@ -36,7 +36,7 @@ export const authAPI = createApi({
           setToken(data.accessToken);
           setUserData(JSON.stringify(data.userData));
           await dispatch(getMeAPI.endpoints.getMe.initiate(null));
-        } catch (error) {}
+        } catch (error) { }
       },
     }),
     adminLoginUser: builder.mutation<{ accessToken: string, userData: any, status: string }, LoginUserRequest>({
@@ -54,7 +54,7 @@ export const authAPI = createApi({
           setToken(data.accessToken);
           setUserData(JSON.stringify(data.userData));
           await dispatch(getMeAPI.endpoints.getMe.initiate(null));
-        } catch (error) {}
+        } catch (error) { }
       },
     }),
     logoutUser: builder.mutation<void, void>({
@@ -75,6 +75,13 @@ export const authAPI = createApi({
         }
       }
     }),
+    getAuthorities: builder.query<any, any>({
+      query: () => ({
+        url: '/users/authorities',
+      }),
+
+      transformResponse: (response: any) => response,
+    }),
   }),
 });
 
@@ -83,4 +90,5 @@ export const {
   useRegisterUserMutation,
   useLogoutUserMutation,
   useAdminLoginUserMutation,
+  useGetAuthoritiesQuery,
 } = authAPI;

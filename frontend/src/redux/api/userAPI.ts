@@ -82,6 +82,7 @@ export const userAPI = createApi({
                     : [{ type: 'Users', id: 'LIST' }],
             transformResponse: (response: { users: IUser[] }) => response.users,
         }),
+
         
         getProfile: builder.query<any, any>({
             query() {

@@ -45,3 +45,9 @@ export const getDateFormat = (formattedDate: any) => {
     const formattedDateTime = moment(formattedDateMoment).format('llll');
     return formattedDateTime;
 };
+
+export const formatDate = (dateString: string | Date): string => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+};

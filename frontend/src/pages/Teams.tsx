@@ -122,16 +122,6 @@ const Teams: React.FC = () => {
             sortable: true,
         },
         {
-            name: "Team Members",
-            width: "200px",
-            cell: (row) => (
-                <Badge color="primary" className="p-2">
-                    {row.members?.length || 0}
-                </Badge>
-            ),
-            sortable: true,
-        },
-        {
             name: "Actions",
             width: "120px",
             cell: (row) => (

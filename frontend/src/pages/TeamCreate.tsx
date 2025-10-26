@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import Select from "react-select";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import {
     Button,
     Card,
@@ -12,14 +11,11 @@ import {
     Row,
 } from "reactstrap";
 import { useEffect, useState } from "react";
-import { useCreateTeamMutation, useGetTeamMembersQuery } from "../redux/api/teamAPI";
+import { useCreateTeamMutation } from "../redux/api/teamAPI";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import classnames from "classnames";
-import { TeamCreateFormFields, TeamMember } from "../redux/api/types";
-
-// Define React Select option type
-type SelectOptionType = { value: string; label: string };
+import { TeamCreateFormFields } from "../redux/api/types";
 
 // Main TeamCreate component
 const TeamCreate: React.FC = () => {
@@ -28,32 +24,12 @@ const TeamCreate: React.FC = () => {
     const {
         register,
         handleSubmit,
-        control,
         formState: { errors },
     } = useForm<TeamCreateFormFields>();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [createTeam, { isLoading, isError, error, isSuccess, data }] = useCreateTeamMutation();
-    const { data: teamMembers, isFetching, refetch } = useGetTeamMembersQuery();
-
-    const [memberOptions, setMemberOptions] = useState<SelectOptionType[]>([]);
-
-    // Fetch members data from the server
-    useEffect(() => {
-        refetch();
-    }, []);
-
-    // Map team members to React Select's expected format
-    useEffect(() => {
-        if (teamMembers) {
-            const options = teamMembers.map((member: TeamMember) => ({
-                value: member._id,
-                label: member.fullname,
-            }));
-            setMemberOptions(options);
-        }
-    }, [teamMembers]);
 
     // Handle success/error
     useEffect(() => {
@@ -87,9 +63,6 @@ const TeamCreate: React.FC = () => {
             if (formData.image && formData.image[0]) {
                 form.append("image", formData.image[0]);
             }
-
-            const memberIds = formData.members.map((member) => member.value);
-            memberIds.forEach((id) => form.append("members", id));
 
             await createTeam(form);
         } catch (error) {
@@ -181,42 +154,6 @@ const TeamCreate: React.FC = () => {
                                     {errors.availability && (
                                         <small className="text-danger">{errors.availability.message}</small>
                                     )}
-                                </FormGroup>
-                            </Col>
-                        </Row>
-
-                        <Row>
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label for="members">Members</Label>
-                                    <Controller
-                                        name="members"
-                                        control={control}
-                                        rules={{
-                                            validate: (value) =>
-                                                (value && value.length > 0) || "At least one member is required.",
-                                        }}
-                                        render={({ field }) => (
-                                            <Select
-                                                {...field}
-                                                options={memberOptions}
-                                                isMulti
-                                                isLoading={isFetching}
-                                                placeholder="Select members..."
-                                                className={classnames({
-                                                    "react-select is-invalid": errors.members,
-                                                })}
-                                                onChange={(selected) => field.onChange(selected)}
-                                                isClearable={true}
-                                            />
-                                        )}
-                                    />
-                                    {errors.members && (
-                                        <small className="text-danger">
-                                            {errors.members.message}
-                                        </small>
-                                    )}
-
                                 </FormGroup>
                             </Col>
                         </Row>

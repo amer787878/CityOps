@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { SubmitHandler, useForm, Controller } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import {
     Button,
     Card,
@@ -14,17 +14,12 @@ import { useEffect, useState } from "react";
 import {
     useUpdateTeamMutation,
     useGetTeamQuery,
-    useGetTeamMembersQuery,
 } from "../redux/api/teamAPI";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import FullScreenLoader from "../components/FullScreenLoader";
-import Select from "react-select";
 import classnames from "classnames";
-import { TeamMember, TeamUpdateRequest } from "../redux/api/types";
-
-// Type for the Select options
-type SelectOptionType = { value: string; label: string };
+import { TeamUpdateRequest } from "../redux/api/types";
 
 // Main component
 const TeamUpdate: React.FC = () => {
@@ -34,7 +29,6 @@ const TeamUpdate: React.FC = () => {
     const {
         register,
         handleSubmit,
-        control,
         formState: { errors },
         setValue,
     } = useForm<TeamUpdateRequest>();
@@ -42,22 +36,8 @@ const TeamUpdate: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { data: teamData, isLoading: isFetchingTeam } = useGetTeamQuery(id || "");
-    const { data: teamMembers, isLoading: isFetchingMembers } = useGetTeamMembersQuery();
     const [updateTeam, { isLoading, isError, error, isSuccess, data }] =
         useUpdateTeamMutation();
-
-    const [memberOptions, setMemberOptions] = useState<SelectOptionType[]>([]);
-
-    // Map teamMembers to react-select options
-    useEffect(() => {
-        if (teamMembers) {
-            const options = teamMembers.map((member: TeamMember) => ({
-                value: member._id,
-                label: member.fullname,
-            }));
-            setMemberOptions(options);
-        }
-    }, [teamMembers]);
 
     // Pre-populate fields from server's response
     useEffect(() => {
@@ -65,16 +45,6 @@ const TeamUpdate: React.FC = () => {
             setValue("name", teamData.name);
             setValue("category", teamData.category);
             setValue("availability", teamData.availability);
-
-            const mappedMembers =
-                teamData.members?.map((member: TeamMember) => ({
-                    value: member._id,
-                    label: member.fullname,
-                })) || [];
-            setValue(
-                "members",
-                mappedMembers.map((m: any) => m.value)
-            );
         }
     }, [teamData, setValue]);
 
@@ -113,16 +83,13 @@ const TeamUpdate: React.FC = () => {
             form.append("category", formData.category);
             form.append("availability", formData.availability);
 
-            const members = formData.members || [];
-            members.forEach((memberId: string) => form.append("members", memberId));
-
             await updateTeam({ id, team: form });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (isFetchingTeam || isFetchingMembers) {
+    if (isFetchingTeam) {
         return <FullScreenLoader />;
     }
 
@@ -215,48 +182,6 @@ const TeamUpdate: React.FC = () => {
                                 </FormGroup>
                             </Col>
                         </Row>
-
-                        {/* Members MultiSelect */}
-                        <Row>
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label for="members">Team Members</Label>
-                                    <Controller
-                                        name="members"
-                                        control={control}
-                                        rules={{
-                                            validate: (value) =>
-                                                (value && value.length > 0) || "At least one member is required.",
-                                        }}
-                                        render={({ field }) => (
-                                            <Select
-                                                {...field}
-                                                isMulti
-                                                options={memberOptions}
-                                                placeholder="Select members..."
-                                                className={`react-select ${classnames({
-                                                    "is-invalid": errors.members,
-                                                })}`}
-                                                onChange={(selected) => {
-                                                    field.onChange(
-                                                        selected?.map((member: SelectOptionType) => member.value) || []
-                                                    );
-                                                }}
-                                                value={memberOptions.filter((option) =>
-                                                    field.value?.includes(option.value)
-                                                )}
-                                            />
-                                        )}
-                                    />
-                                    {errors.members && (
-                                        <small className="text-danger">
-                                            {errors.members.message}
-                                        </small>
-                                    )}
-                                </FormGroup>
-                            </Col>
-                        </Row>
-
                         <Row className="mt-4">
                             <Col>
                                 <Button

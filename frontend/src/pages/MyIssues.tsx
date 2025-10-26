@@ -6,7 +6,6 @@ import {
     DropdownToggle,
     Row,
     UncontrolledDropdown,
-    Input,
     Badge,
 } from "reactstrap";
 import DataTable, { TableColumn } from 'react-data-table-component';
@@ -17,10 +16,11 @@ import { useNavigate } from "react-router-dom";
 import { useGetMyIssuesQuery } from "../redux/api/issueAPI";
 import FullScreenLoader from "../components/FullScreenLoader";
 import { IIssue } from "../redux/api/types";
+import GooglePlacesAutocomplete from 'react-google-autocomplete';
 
 const MyIssues: React.FC = () => {
     const navigate = useNavigate();
-    const [filters, setFilters] = useState<{ category?: string; location?: string; priority?: string }>({});
+    const [filters, setFilters] = useState<{ status?: string; address?: string; priority?: string }>({});
 
     const { data: issues, refetch, isLoading } = useGetMyIssuesQuery(filters);
 
@@ -37,9 +37,9 @@ const MyIssues: React.FC = () => {
 
     const renderBadge = (type: 'priority' | 'status', value: string) => {
         const badgeColors: Record<string, string> = {
-            High: 'info',
-            Medium: 'success',
-            Low: 'primary',
+            Critical: 'danger',
+            Moderate: 'info',
+            Low: 'secondary',
             Active: 'primary',
             Pending: 'warning',
             Suspended: 'danger',
@@ -134,12 +134,25 @@ const MyIssues: React.FC = () => {
                         </Col>
                     </Row>
                     <Row className="my-3">
-                        <Col md={4}>
+                        <Col md={3}>
                             <Select
                                 styles={customStyles}
                                 options={[
-                                    { value: 'High', label: 'High' },
-                                    { value: 'Medium', label: 'Medium' },
+                                    { value: 'Pending', label: 'Pending' },
+                                    { value: 'In Progress', label: 'In Progress' },
+                                    { value: 'Resolved', label: 'Resolved' },
+                                ]}
+                                onChange={(e) => handleFilterChange('status', e?.value || '')}
+                                placeholder="Filter by Status"
+                                isClearable={true}
+                            />
+                        </Col>
+                        <Col md={3}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'Critical', label: 'Critical' },
+                                    { value: 'Moderate', label: 'Moderate' },
                                     { value: 'Low', label: 'Low' },
                                 ]}
                                 onChange={(e) => handleFilterChange('priority', e?.value || '')}
@@ -147,11 +160,17 @@ const MyIssues: React.FC = () => {
                                 isClearable={true}
                             />
                         </Col>
-                        <Col md={4}>
-                            <Input
-                                type="text"
-                                placeholder="Filter by Location"
-                                onChange={(e) => handleFilterChange('location', e.target.value)}
+                        <Col md={3}>
+                            <GooglePlacesAutocomplete
+                                apiKey={process.env.REACT_APP_GOOGLE_API_KEY}
+                                className={`form-control`}
+                                onPlaceSelected={(place) => {
+                                    handleFilterChange('address', place.formatted_address || '');
+                                }}
+                                options={{
+                                    types: ['address'],
+                                    componentRestrictions: { country: 'IL' },
+                                }}
                             />
                         </Col>
                     </Row>

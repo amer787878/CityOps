@@ -20,6 +20,19 @@ export const issueAPI = createApi({
             transformResponse: (result: { data: { issue: any } }) =>
                 result
         }),
+        generateAI: builder.mutation<any, any>({
+            query(issue) {
+                return {
+                    url: '/issues/generate-ai',
+                    method: 'POST',
+                    credentials: 'include',
+                    body: issue,
+                };
+            },
+            invalidatesTags: [{ type: 'Issues', id: 'LIST' }],
+            transformResponse: (result: { data: { issue: any } }) =>
+                result
+        }),
         updateIssue: builder.mutation<any, any>({
             query({ id, issue }) {
                 return {
@@ -40,7 +53,7 @@ export const issueAPI = createApi({
                 response,
         }),
 
-        postIssue: builder.mutation<any, any>({
+        postComment: builder.mutation<any, any>({
             query(comment) {
                 return {
                     url: `/comments/postComment`,
@@ -69,10 +82,52 @@ export const issueAPI = createApi({
             }
         ),
 
+        assignTeam: builder.mutation<any, any>(
+            {
+                query({ id, data }) {
+                    return {
+                        url: `/issues/assignTeam/${id}`,
+                        method: 'PUT',
+                        credentials: 'include',
+                        body: data,
+                    };
+                },
+                invalidatesTags: [{ type: 'Issues', id: 'LIST' }],
+                transformResponse: (response: any) =>
+                    response,
+            }
+        ),
+
+        updateStatus: builder.mutation<any, any>(
+            {
+                query({ id, data }) {
+                    return {
+                        url: `/issues/updateStatus/${id}`,
+                        method: 'PUT',
+                        credentials: 'include',
+                        body: data,
+                    };
+                },
+                invalidatesTags: [{ type: 'Issues', id: 'LIST' }],
+                transformResponse: (response: any) =>
+                    response,
+            }
+        ),
+
         getIssue: builder.query<any, any>({
             query(id) {
                 return {
                     url: `/issues/getOneIssue/${id}`,
+                    credentials: 'include',
+                };
+            },
+            providesTags: (_result, _error, id) => [{ type: 'Issues', id }],
+        }),
+
+        getExploreIssue: builder.query<any, any>({
+            query(id) {
+                return {
+                    url: `/issues/explore/getOneIssue/${id}`,
                     credentials: 'include',
                 };
             },
@@ -92,7 +147,29 @@ export const issueAPI = createApi({
                         { type: 'Issues', id: 'LIST' },
                     ]
                     : [{ type: 'Issues', id: 'LIST' }],
-            transformResponse: (response: ITeamIssue[]) => response,
+            transformResponse: (response: IIssue[]) => response,
+        }),
+
+        getExploreIssues: builder.query<
+            { data: IIssue[]; totalPages: number; currentPage: number },
+            { page: number; limit: number }
+        >({
+            query: ({ page, limit }) => ({
+                url: `/issues/explore-issues?page=${page}&limit=${limit}`,
+                credentials: "include",
+            }),
+            providesTags: (result) =>
+                result
+                    ? [
+                        ...result.data.map((issue) => ({ type: "Issues" as const, id: issue._id })),
+                        { type: "Issues", id: "LIST" },
+                    ]
+                    : [{ type: "Issues", id: "LIST" }],
+            transformResponse: (response: {
+                data: IIssue[];
+                totalPages: number;
+                currentPage: number;
+            }) => response,
         }),
 
         getTeamIssues: builder.query<ITeamIssue[], any>({
@@ -150,5 +227,10 @@ export const {
     useUpvoteIssueMutation,
     useGetMyIssuesQuery,
     useGetTeamIssuesQuery,
-    usePostIssueMutation,
+    usePostCommentMutation,
+    useAssignTeamMutation,
+    useUpdateStatusMutation,
+    useGetExploreIssuesQuery,
+    useGetExploreIssueQuery,
+    useGenerateAIMutation,
 } = issueAPI;

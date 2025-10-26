@@ -37,7 +37,7 @@ const Issues: React.FC = () => {
         []
     );
 
-    const handleUpvote = useCallback(async (id: number) => {
+    const handleUpvote = useCallback(async (id: string) => {
         console.log(`Upvoted issue with ID: ${id}`);
         try {
             await upvoteIssue(id).unwrap();
@@ -155,6 +155,19 @@ const Issues: React.FC = () => {
                         </Col>
                     </Row>
                     <Row className="my-3">
+                        <Col md={4}>
+                            <Select
+                                styles={customStyles}
+                                options={[
+                                    { value: 'Road Maintenance', label: 'Road Maintenance' },
+                                    { value: 'Waste Disposal', label: 'Waste Disposal' },
+                                    { value: 'Streetlight Maintenance', label: 'Streetlight Maintenance' },
+                                ]}
+                                onChange={(e) => handleFilterChange('category', e?.value || '')}
+                                placeholder="Filter by Category"
+                                isClearable={true}
+                            />
+                        </Col>
                         <Col md={4}>
                             <Select
                                 styles={customStyles}
